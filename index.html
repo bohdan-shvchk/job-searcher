@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%236c63ff'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white'>V</text></svg>">
+<title>Вакансії</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #141420;
+    --panel: #0e0e1a;
+    --border: #252538;
+    --text: #e0e0e0;
+    --muted: #777;
+    --accent: #6c63ff;
+    --link: #74b9ff;
+    --danger: #ff4757;
+    --danger-bg: rgba(255,71,87,.1);
+    --green: #2ed573;
+    --yellow: #ffa502;
+    --red: #ff4757;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 12px;
+    padding-bottom: 60px;
+    max-width: 800px;
+    margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; padding: 16px 0 4px; }
+  header h1 { font-size: 1.2rem; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
+
+  /* Filters */
+  .filters {
+    display: flex; gap: 6px; padding: 12px 0 4px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.72rem; padding: 5px 10px;
+    border-radius: 16px; white-space: nowrap; cursor: pointer;
+    transition: all .2s;
+  }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Sort controls */
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0 2px; gap: 8px;
+  }
+  .sort-group {
+    display: flex; gap: 4px; align-items: center;
+  }
+  .sort-label {
+    color: var(--muted); font-size: 0.68rem; margin-right: 2px;
+  }
+  .sort-btn {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.68rem; padding: 3px 8px;
+    border-radius: 4px; cursor: pointer; transition: all .2s;
+    white-space: nowrap;
+  }
+  .sort-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .sort-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+  /* Search */
+  .search-box {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); font-size: 0.75rem; padding: 4px 10px;
+    border-radius: 6px; outline: none; width: 160px;
+    transition: border-color .2s;
+  }
+  .search-box::placeholder { color: var(--muted); }
+  .search-box:focus { border-color: var(--accent); }
+
+  /* Section */
+  .section { margin-top: 18px; }
+  .section-hdr {
+    font-size: 0.9rem; font-weight: 600; color: var(--accent);
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .section-count {
+    background: var(--border); color: var(--muted);
+    font-size: 0.65rem; padding: 2px 7px; border-radius: 10px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card-header:active { background: rgba(255,255,255,.02); }
+
+  .score-badge {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+  }
+  .score-high { background: rgba(46,213,115,.2); color: var(--green); }
+  .score-mid { background: rgba(255,165,2,.2); color: var(--yellow); }
+  .score-low { background: rgba(255,71,87,.15); color: var(--red); }
+  .score-none { background: var(--border); color: var(--muted); }
+
+  .card-info { flex: 1; min-width: 0; padding-right: 36px; }
+
+  .card-title {
+    color: var(--link); text-decoration: none;
+    font-size: 0.85rem; line-height: 1.3;
+    display: block; word-wrap: break-word;
+  }
+  .card-title:hover { text-decoration: underline; }
+
+  .card-meta {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 5px; font-size: 0.68rem; color: var(--muted);
+  }
+  .tag {
+    background: var(--border); padding: 1px 6px;
+    border-radius: 4px; white-space: nowrap;
+  }
+  .tag-date { background: rgba(108,99,255,.15); color: var(--accent); }
+  .tag-inactive { color: var(--red); background: var(--danger-bg); }
+  .tag-salary { background: rgba(46,213,115,.12); color: var(--green); }
+  .tag-new {
+    background: rgba(0,168,255,.2); color: #00a8ff;
+    font-weight: 600; animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .6; }
+  }
+
+  .card-actions {
+    display: flex; gap: 2px;
+    position: absolute; top: 8px; right: 8px;
+  }
+
+  .btn-icon {
+    width: 30px; height: 30px; border: none;
+    background: transparent; color: var(--muted);
+    font-size: 1rem; cursor: pointer; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .btn-icon:hover { background: var(--border); color: var(--text); }
+  .btn-del:hover { background: var(--danger-bg); color: var(--danger); }
+  .btn-del:active { transform: scale(.9); }
+
+  /* Chevron — left side */
+  .chevron {
+    flex-shrink: 0;
+    width: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; color: var(--muted);
+    transition: transform .25s;
+    align-self: center;
+  }
+  .card.open .chevron { transform: rotate(180deg); }
+
+  /* Accordion panel */
+  .card-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .3s ease, padding .3s ease;
+  }
+  .card.open .card-panel {
+    max-height: 300px;
+  }
+
+  .panel-inner {
+    padding: 0 12px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .panel-label {
+    font-size: 0.68rem; color: var(--accent);
+    font-weight: 600; margin: 10px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .panel-text {
+    font-size: 0.8rem; line-height: 1.5;
+    color: var(--text);
+  }
+  .panel-no-analysis {
+    font-size: 0.78rem; color: var(--muted);
+    font-style: italic; padding: 8px 0;
+  }
+
+  /* Delete animation */
+  .card.deleting {
+    opacity: 0; max-height: 0; margin: 0;
+    border: 0; transition: all .3s;
+  }
+
+  /* Status bar */
+  .status-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--card); border-top: 1px solid var(--border);
+    padding: 8px; text-align: center;
+    font-size: 0.72rem; color: var(--muted); z-index: 10;
+  }
+  .dot {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; margin-right: 4px; vertical-align: middle;
+  }
+  .dot-ok { background: var(--green); }
+  .dot-err { background: var(--red); }
+
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; font-size: .9rem; }
+
+  @media (min-width: 600px) {
+    body { padding: 20px 20px 60px; }
+    header h1 { font-size: 1.4rem; }
+    .card-header { padding: 14px 16px; }
+    .panel-inner { padding: 0 16px 14px; }
+    .card-title { font-size: .9rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Вакансії UI/UX</h1>
+  <div class="meta" id="meta"></div>
+</header>
+
+<div class="filters" id="filters"></div>
+<div class="toolbar">
+  <div class="sort-group">
+    <span class="sort-label">Sort:</span>
+    <button class="sort-btn active" onclick="setSort('default')">Default</button>
+    <button class="sort-btn" onclick="setSort('score')">Score ↓</button>
+    <button class="sort-btn" onclick="setSort('date')">Date ↓</button>
+  </div>
+  <input class="search-box" type="text" id="searchBox" placeholder="Пошук..." oninput="onSearch(this.value)">
+</div>
+<div id="app"></div>
+
+<div class="status-bar" id="statusBar">
+  <span class="dot dot-ok"></span> Підключено
+</div>
+
+<script>
+const app = document.getElementById('app');
+const filtersEl = document.getElementById('filters');
+const REFRESH = 30000;
+const SKIP = ['Пошукові запити для самостійного моніторингу'];
+
+let allData = [];
+let activeFilter = 'all';
+let activeSort = 'default';
+let searchQuery = '';
+let openCards = new Set();
+
+// Seen tracking via localStorage
+function getSeenUrls() {
+  try { return new Set(JSON.parse(localStorage.getItem('seenUrls') || '[]')); }
+  catch { return new Set(); }
+}
+function markSeen(url) {
+  const seen = getSeenUrls();
+  seen.add(url);
+  localStorage.setItem('seenUrls', JSON.stringify([...seen]));
+}
+function isNew(url) { return !getSeenUrls().has(url); }
+
+async function load() {
+  try {
+    const r = await fetch('/api/vacancies');
+    allData = await r.json();
+    renderFilters();
+    render();
+    status('ok');
+  } catch(e) { status('err'); }
+}
+
+function renderFilters() {
+  const scores = {all:0, hot:0, ok:0, skip:0, new:0};
+  for (const s of allData) {
+    if (SKIP.includes(s.name)) continue;
+    for (const v of s.items) {
+      scores.all++;
+      if (isNew(v.url)) scores.new++;
+      if (v.score === null) {}
+      else if (v.score >= 6) scores.hot++;
+      else if (v.score >= 4) scores.ok++;
+      else scores.skip++;
+    }
+  }
+  filtersEl.innerHTML = `
+    <button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Всі ${scores.all}</button>
+    <button class="filter-btn ${activeFilter==='new'?'active':''}" onclick="setFilter('new')">New ${scores.new}</button>
+    <button class="filter-btn ${activeFilter==='hot'?'active':''}" onclick="setFilter('hot')">Hot ${scores.hot}</button>
+    <button class="filter-btn ${activeFilter==='ok'?'active':''}" onclick="setFilter('ok')">OK ${scores.ok}</button>
+    <button class="filter-btn ${activeFilter==='skip'?'active':''}" onclick="setFilter('skip')">Skip ${scores.skip}</button>
+  `;
+}
+
+function setFilter(f) { activeFilter = f; renderFilters(); render(); }
+
+function setSort(s) {
+  activeSort = s;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.sort-btn[onclick="setSort('${s}')"]`).classList.add('active');
+  render();
+}
+
+function onSearch(q) { searchQuery = q.toLowerCase().trim(); render(); }
+
+function parseDate(v) {
+  const d = v.published || v.date || '';
+  if (!d) return 0;
+  // Handle DD.MM or DD.MM.YYYY
+  const parts = d.split('.');
+  if (parts.length === 2) return parseInt(parts[1]) * 100 + parseInt(parts[0]);
+  if (parts.length === 3) return parseInt(parts[2]) * 10000 + parseInt(parts[1]) * 100 + parseInt(parts[0]);
+  return 0;
+}
+
+function sortItems(items) {
+  if (activeSort === 'default') return items;
+  const sorted = [...items];
+  if (activeSort === 'score') {
+    sorted.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+  } else if (activeSort === 'date') {
+    sorted.sort((a, b) => parseDate(b) - parseDate(a));
+  }
+  return sorted;
+}
+
+function matchesSearch(v) {
+  if (!searchQuery) return true;
+  const text = [v.title, v.type, v.summary, v.salary, v.remote].join(' ').toLowerCase();
+  return text.includes(searchQuery);
+}
+
+function passFilter(v) {
+  if (activeFilter === 'all') return true;
+  if (activeFilter === 'new') return isNew(v.url);
+  if (activeFilter === 'hot') return v.score >= 6;
+  if (activeFilter === 'ok') return v.score >= 4 && v.score < 6;
+  if (activeFilter === 'skip') return v.score !== null && v.score < 4;
+  return true;
+}
+
+function scoreClass(s) {
+  if (s === null) return 'score-none';
+  if (s >= 6) return 'score-high';
+  if (s >= 4) return 'score-mid';
+  return 'score-low';
+}
+
+function getDateTag(v) {
+  const d = v.published || v.date;
+  if (!d) return '';
+  return `<span class="tag tag-date">${esc(d)}</span>`;
+}
+
+function render() {
+  let html = '';
+  let total = 0;
+
+  for (const section of allData) {
+    if (SKIP.includes(section.name)) continue;
+    const filtered = sortItems(section.items.filter(v => passFilter(v) && matchesSearch(v)));
+    if (!filtered.length) continue;
+    total += filtered.length;
+
+    html += `<div class="section">
+      <div class="section-hdr">${esc(section.name)}<span class="section-count">${filtered.length}</span></div>`;
+
+    for (const v of filtered) {
+      const sc = v.score !== null ? v.score + '/10' : '?';
+      const isOpen = openCards.has(v.url);
+
+      html += `
+      <div class="card ${isOpen ? 'open' : ''}" data-url="${escA(v.url)}">
+        <div class="card-header" onclick="toggle(this)">
+          <div class="chevron">▼</div>
+          <div class="score-badge ${scoreClass(v.score)}">${sc}</div>
+          <div class="card-info">
+            <a class="card-title" href="${escA(v.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(v.title)}</a>
+            <div class="card-meta">
+              ${v.type ? `<span class="tag">${esc(v.type)}</span>` : ''}
+              ${v.remote ? `<span class="tag">${esc(v.remote)}</span>` : ''}
+              ${v.salary && v.salary !== 'Не вказана' ? `<span class="tag tag-salary">${esc(v.salary)}</span>` : ''}
+              ${getDateTag(v)}
+              ${v.status === 'inactive' ? '<span class="tag tag-inactive">inactive</span>' : ''}
+              ${isNew(v.url) ? '<span class="tag tag-new">new</span>' : ''}
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-icon btn-del" onclick="event.stopPropagation(); del(this)" title="Видалити">✕</button>
+          </div>
+        </div>
+        <div class="card-panel">
+          <div class="panel-inner">
+            ${v.summary
+              ? `<div class="panel-label">Аналіз</div><div class="panel-text">${esc(v.summary)}</div>`
+              : '<div class="panel-no-analysis">Аналіз ще не проведено</div>'
+            }
+          </div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (!total) html = '<div class="empty">Нічого не знайдено</div>';
+  app.innerHTML = html;
+  document.getElementById('meta').textContent =
+    `Всього: ${total} · Оновлено: ${new Date().toLocaleTimeString('uk-UA')}`;
+}
+
+function toggle(hdr) {
+  const card = hdr.closest('.card');
+  const url = card.dataset.url;
+  card.classList.toggle('open');
+  if (card.classList.contains('open')) {
+    openCards.add(url);
+    if (isNew(url)) {
+      markSeen(url);
+      const newTag = card.querySelector('.tag-new');
+      if (newTag) newTag.remove();
+      renderFilters();
+    }
+  } else {
+    openCards.delete(url);
+  }
+}
+
+async function del(btn) {
+  const card = btn.closest('.card');
+  const url = card.dataset.url;
+  if (!confirm('Видалити вакансію?')) return;
+  card.classList.add('deleting');
+  openCards.delete(url);
+  try {
+    const r = await fetch('/api/vacancies', {
+      method:'DELETE', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    if (r.ok) setTimeout(load, 350);
+    else { card.classList.remove('deleting'); alert('Помилка'); }
+  } catch(e) { card.classList.remove('deleting'); alert('Нема зв\'язку'); }
+}
+
+function status(s) {
+  const sb = document.getElementById('statusBar');
+  sb.innerHTML = s === 'ok'
+    ? '<span class="dot dot-ok"></span> Підключено'
+    : '<span class="dot dot-err"></span> Немає зв\'язку';
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escA(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+load();
+setInterval(load, REFRESH);
+</script>
+</body>
+</html>
