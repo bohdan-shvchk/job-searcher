@@ -5,6 +5,9 @@ import re
 import os
 import json
 import sys
+import threading
+import subprocess
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import WEB_PORT, WEB_HOST, PAGE_TITLE
@@ -15,6 +18,28 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MD_FILE = os.path.join(BASE_DIR, "vacancies.md")
 ANALYSES_FILE = os.path.join(BASE_DIR, "analyses.json")
+
+INTERVAL = 2 * 60 * 60  # 2 hours
+
+
+def run_script(script):
+    print(f"[worker] Running {script}...", flush=True)
+    result = subprocess.run([sys.executable, os.path.join(BASE_DIR, script)],
+                            capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, flush=True)
+    if result.stderr:
+        print(result.stderr, flush=True)
+    print(f"[worker] Done {script}", flush=True)
+
+
+def worker_loop():
+    run_script("check_new.py")
+    run_script("analyze_new.py")
+    while True:
+        time.sleep(INTERVAL)
+        run_script("check_new.py")
+        run_script("analyze_new.py")
 
 
 def load_analyses():
@@ -30,6 +55,8 @@ def save_analyses(data):
 
 
 def parse_vacancies():
+    if not os.path.exists(MD_FILE):
+        return []
     with open(MD_FILE, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -69,6 +96,8 @@ def parse_vacancies():
 
 
 def remove_vacancy(url):
+    if not os.path.exists(MD_FILE):
+        return False
     with open(MD_FILE, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -107,6 +136,9 @@ def api_delete():
         return jsonify({"ok": True})
     return jsonify({"ok": False, "error": "not found"}), 404
 
+
+t = threading.Thread(target=worker_loop, daemon=True)
+t.start()
 
 if __name__ == "__main__":
     app.run(host=WEB_HOST, port=WEB_PORT)
