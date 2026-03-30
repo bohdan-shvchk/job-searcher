@@ -5,18 +5,20 @@ Edit this file to customize the job search for YOUR profile.
 Everything else works automatically.
 """
 
+import os
+
 # ============================================================
 # 1. YOUR PROFILE — fill in your details
 # ============================================================
 
 PROFILE = {
-    "name": "Your Name",
-    "title": "Your Target Role",        # e.g. "Senior Python Developer", "Product Designer", "Data Analyst"
-    "experience_years": 5,               # years of experience
-    "salary_min": 3000,                  # minimum salary USD/month
-    "salary_max": 6000,                  # desired salary USD/month
-    "remote_only": True,                 # True = only remote, False = office OK too
-    "language": "uk",                    # "uk" = Ukrainian, "en" = English
+    "name": "Bohdan",
+    "title": "Webflow / Shopify / Frontend Developer",
+    "experience_years": 7,
+    "salary_min": 2000,
+    "salary_max": 3200,
+    "remote_only": True,
+    "language": "uk",
 }
 
 # ============================================================
@@ -24,16 +26,21 @@ PROFILE = {
 # ============================================================
 
 TARGET = [
-    "Senior Python Developer, remote full-time",
-    "Stable product company, not outsource",
-    "Good engineering culture",
+    "Webflow Developer, remote full-time",
+    "Shopify Developer, remote full-time",
+    "Frontend Developer (HTML/CSS/JS), remote",
+    "No-code / Low-code Developer",
+    "AI Automation Specialist (n8n, Make, Zapier)",
+    "Web Developer with SEO experience",
 ]
 
 NOT_INTERESTED = [
-    "Outsource/outstaffing agencies",
-    "Gambling, adult content",
+    "Companies working with or for Russia",
+    "Vacancies posted in Russian language — Ukrainian or English only",
+    "Gambling, adult content, crypto scams",
     "Office-only positions",
     "Junior/intern positions",
+    "Outsource sweatshops with no career growth",
 ]
 
 # ============================================================
@@ -43,10 +50,11 @@ NOT_INTERESTED = [
 FIT_CRITERIA = """
 | Signal | Good fit | Poor fit |
 |---|---|---|
-| Role type | Senior/Lead | Junior, mid-level |
-| Company type | Product company | Outsource/agency |
+| Role type | Webflow, Shopify, Frontend, No-code, AI Automation | Backend-only, DevOps, Mobile |
+| Company type | Product company, digital agency, startup | Russian market, gambling, adult |
 | Remote | Fully remote | Office-required |
-| Salary | $3000-6000+/month | Below range |
+| Salary | $2000-3200+/month | Below $2000 |
+| Language | Ukrainian or English vacancy | Russian-language vacancy |
 """
 
 # ============================================================
@@ -54,10 +62,15 @@ FIT_CRITERIA = """
 # ============================================================
 
 KEY_EXPERIENCE = [
-    "5 years in Python/Django development",
-    "Built microservices architecture for fintech startup",
-    "Team lead experience, mentoring 3 developers",
-    # Add your key achievements here
+    "7+ years in web development",
+    "4 years building websites with Webflow (CMS, interactions, custom code)",
+    "2 years Shopify development (themes, custom sections, Liquid)",
+    "HTML, CSS, JavaScript, jQuery, TypeScript",
+    "SEO optimization — on-page, technical, schema markup",
+    "AI automation with n8n, Make, Zapier, Claude Code",
+    "UI/UX design in Figma",
+    "Team and project management (Jira, ClickUp, Asana, Notion)",
+    "SaaS, no-code/low-code tools ecosystem",
 ]
 
 # ============================================================
@@ -65,13 +78,20 @@ KEY_EXPERIENCE = [
 # ============================================================
 
 SEARCH_KEYWORDS = [
-    "python developer",
-    "backend developer",
-    "django developer",
+    "webflow developer",
+    "shopify developer",
+    "frontend developer",
+    "no-code developer",
+    "web developer",
+    "automation specialist",
 ]
 
 # Keywords that vacancy titles must contain (at least one)
-TITLE_KEYWORDS = ["python", "backend", "django", "developer", "engineer", "розробник"]
+TITLE_KEYWORDS = [
+    "webflow", "shopify", "frontend", "front-end", "front end",
+    "web developer", "no-code", "nocode", "automation", "html",
+    "розробник", "верстальник", "фронтенд",
+]
 
 # ============================================================
 # 6. JOB BOARD URLS — customize search queries
@@ -80,36 +100,36 @@ TITLE_KEYWORDS = ["python", "backend", "django", "developer", "engineer", "ро�
 SOURCES = {
     "Djinni": {
         "enabled": True,
-        "url": "https://djinni.co/jobs/keyword-python/",
+        "url": "https://djinni.co/jobs/keyword-webflow/",
         "link_pattern": r'/jobs/(\d+)-',
     },
     "DOU": {
         "enabled": True,
-        "url": "https://jobs.dou.ua/vacancies/?search=Python+Developer",
+        "url": "https://jobs.dou.ua/vacancies/?search=Webflow+Developer",
         "link_pattern": r'/companies/[^/]+/vacancies/\d+/',
     },
     "Work.ua": {
         "enabled": True,
-        "url": "https://www.work.ua/en/jobs-python+developer/",
+        "url": "https://www.work.ua/en/jobs-webflow+developer/",
         "link_pattern": r'/en/jobs/\d+/',
     },
 }
 
 # ============================================================
-# 7. GROQ API KEY (free) — get yours at console.groq.com
+# 7. GROQ API KEY (free) — loaded from environment variable
 # ============================================================
 
-GROQ_API_KEY = ""  # Paste your key here, e.g. "gsk_abc123..."
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
 # ============================================================
 # 8. WEB SERVER
 # ============================================================
 
-WEB_PORT = 8080
+WEB_PORT = int(os.environ.get("PORT", 8080))
 WEB_HOST = "0.0.0.0"
 
 # ============================================================
 # 9. PAGE TITLE
 # ============================================================
 
-PAGE_TITLE = "Job Search"  # Shown in browser tab and header
+PAGE_TITLE = "Bohdan — Job Search"
