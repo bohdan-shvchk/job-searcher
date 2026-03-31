@@ -131,41 +131,36 @@ def check_dou(cfg):
     seen_urls = set()
 
     for base_url in cfg.get("urls", [cfg.get("url", "")]):
-        page = 0
-        while True:
-            url_page = f"{base_url}&page={page}" if page > 0 else base_url
-            html = fetch_html(url_page)
-            if not html:
-                break
-            total_on_page = 0
-            for m in re.finditer(
-                r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
-                html
-            ):
-                url = m.group(1)
-                title = m.group(2).strip()
-                total_on_page += 1
-                if url in existing or url in seen_urls or not is_relevant(title):
-                    continue
-                seen_urls.add(url)
-                results.append({"title": title, "url": url, "section": "DOU.ua"})
+        # DOU loads vacancies via AJAX endpoint
+        ajax_url = base_url.replace("https://jobs.dou.ua/vacancies/", "https://jobs.dou.ua/vacancies/ajax/")
+        html = fetch_html(ajax_url)
+        if not html:
+            html = fetch_html(base_url)
+        if not html:
+            continue
+        log(f"  DOU HTML length: {len(html)}, snippet: {html[:200].replace(chr(10),' ')}")
+        for m in re.finditer(
+            r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
+            html
+        ):
+            url = m.group(1)
+            title = m.group(2).strip()
+            if url in existing or url in seen_urls or not is_relevant(title):
+                continue
+            seen_urls.add(url)
+            results.append({"title": title, "url": url, "section": "DOU.ua"})
 
-            for m in re.finditer(
-                r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
-                html
-            ):
-                url = f"https://jobs.dou.ua{m.group(1)}"
-                title = m.group(4).strip()
-                total_on_page += 1
-                if url in existing or url in seen_urls or not is_relevant(title):
-                    continue
-                seen_urls.add(url)
-                results.append({"title": title, "url": url, "section": "DOU.ua"})
-
-            if total_on_page == 0:
-                break
-            page += 1
-            time.sleep(2)
+        for m in re.finditer(
+            r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
+            html
+        ):
+            url = f"https://jobs.dou.ua{m.group(1)}"
+            title = m.group(4).strip()
+            if url in existing or url in seen_urls or not is_relevant(title):
+                continue
+            seen_urls.add(url)
+            results.append({"title": title, "url": url, "section": "DOU.ua"})
+        time.sleep(2)
 
     log(f"  Found {len(results)} new on DOU")
     return results
@@ -178,27 +173,29 @@ def check_workua(cfg):
     seen_urls = set()
 
     for base_url in cfg.get("urls", [cfg.get("url", "")]):
-        page = 1
-        while True:
-            url_page = f"{base_url}?page={page}" if page > 1 else base_url
-            html = fetch_html(url_page)
-            if not html:
-                break
-            total_on_page = 0
-            for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
-                path = m.group(1)
-                url = f"https://www.work.ua{path}"
-                title = m.group(3).strip()
-                total_on_page += 1
-                if url in existing or url in seen_urls or not is_relevant(title):
-                    continue
-                seen_urls.add(url)
-                results.append({"title": title, "url": url, "section": "Work.ua"})
-
-            if total_on_page == 0:
-                break
-            page += 1
-            time.sleep(2)
+        html = fetch_html(base_url)
+        if not html:
+            continue
+        log(f"  Work.ua HTML length: {len(html)}, snippet: {html[:200].replace(chr(10),' ')}")
+        for m in re.finditer(r'href="(/(?:en/)?jobs/(\d+)/)"', html):
+            path = m.group(1)
+            url = f"https://www.work.ua{path}"
+            if url in existing or url in seen_urls:
+                continue
+            # get title from nearby context
+            start = max(0, m.start() - 50)
+            chunk = html[start:m.end() + 300]
+            title_m = re.search(r'title="([^"]{5,})"', chunk)
+            if not title_m:
+                title_m = re.search(r'>\s*([A-Za-zА-Яа-яЇїІіЄє][^<]{4,})\s*<', chunk)
+            if not title_m:
+                continue
+            title = title_m.group(1).strip()
+            seen_urls.add(url)
+            if not is_relevant(title):
+                continue
+            results.append({"title": title, "url": url, "section": "Work.ua"})
+        time.sleep(2)
 
     log(f"  Found {len(results)} new on Work.ua")
     return results
