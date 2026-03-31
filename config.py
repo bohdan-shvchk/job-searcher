@@ -100,17 +100,33 @@ TITLE_KEYWORDS = [
 SOURCES = {
     "Djinni": {
         "enabled": True,
-        "url": "https://djinni.co/jobs/keyword-webflow/",
+        "urls": [
+            "https://djinni.co/jobs/keyword-webflow/",
+            "https://djinni.co/jobs/keyword-shopify/",
+            "https://djinni.co/jobs/keyword-frontend/",
+            "https://djinni.co/jobs/keyword-no-code/",
+            "https://djinni.co/jobs/keyword-automation/",
+        ],
         "link_pattern": r'/jobs/(\d+)-',
     },
     "DOU": {
         "enabled": True,
-        "url": "https://jobs.dou.ua/vacancies/?search=Webflow+Developer",
+        "urls": [
+            "https://jobs.dou.ua/vacancies/?search=Webflow+Developer",
+            "https://jobs.dou.ua/vacancies/?search=Shopify+Developer",
+            "https://jobs.dou.ua/vacancies/?search=Frontend+Developer",
+            "https://jobs.dou.ua/vacancies/?search=No-code",
+        ],
         "link_pattern": r'/companies/[^/]+/vacancies/\d+/',
     },
     "Work.ua": {
         "enabled": True,
-        "url": "https://www.work.ua/en/jobs-webflow+developer/",
+        "urls": [
+            "https://www.work.ua/en/jobs-webflow+developer/",
+            "https://www.work.ua/en/jobs-shopify+developer/",
+            "https://www.work.ua/en/jobs-frontend+developer/",
+            "https://www.work.ua/en/jobs-automation+specialist/",
+        ],
         "link_pattern": r'/en/jobs/\d+/',
     },
 }

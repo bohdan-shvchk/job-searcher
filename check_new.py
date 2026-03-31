@@ -64,26 +64,28 @@ def is_relevant(title):
 
 def check_djinni(cfg):
     log("Checking Djinni...")
-    html = fetch_html(cfg["url"])
-    if not html:
-        return []
-
     existing = get_existing_urls()
     results = []
+    seen_urls = set()
 
-    for m in re.finditer(r'<a[^>]*href="(/jobs/(\d+)-[^"]*?)"[^>]*>', html):
-        path = m.group(1)
-        url = f"https://djinni.co{path}"
-        if url in existing:
+    for search_url in cfg.get("urls", [cfg.get("url", "")]):
+        html = fetch_html(search_url)
+        if not html:
             continue
-
-        start = m.end()
-        chunk = html[start:start + 500]
-        title_m = re.search(r'>([^<]{10,})<', chunk)
-        if title_m:
-            title = title_m.group(1).strip()
-            if is_relevant(title):
-                results.append({"title": title, "url": url, "section": "Djinni.co"})
+        for m in re.finditer(r'<a[^>]*href="(/jobs/(\d+)-[^"]*?)"[^>]*>', html):
+            path = m.group(1)
+            url = f"https://djinni.co{path}"
+            if url in existing or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            start = m.end()
+            chunk = html[start:start + 500]
+            title_m = re.search(r'>([^<]{10,})<', chunk)
+            if title_m:
+                title = title_m.group(1).strip()
+                if is_relevant(title):
+                    results.append({"title": title, "url": url, "section": "Djinni.co"})
+        time.sleep(2)
 
     log(f"  Found {len(results)} new on Djinni")
     return results
@@ -91,33 +93,36 @@ def check_djinni(cfg):
 
 def check_dou(cfg):
     log("Checking DOU...")
-    html = fetch_html(cfg["url"])
-    if not html:
-        return []
-
     existing = get_existing_urls()
     results = []
+    seen_urls = set()
 
-    for m in re.finditer(
-        r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
-        html
-    ):
-        url = m.group(1)
-        title = m.group(2).strip()
-        if url in existing or not is_relevant(title):
+    for search_url in cfg.get("urls", [cfg.get("url", "")]):
+        html = fetch_html(search_url)
+        if not html:
             continue
-        results.append({"title": title, "url": url, "section": "DOU.ua"})
-
-    for m in re.finditer(
-        r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
-        html
-    ):
-        url = f"https://jobs.dou.ua{m.group(1)}"
-        title = m.group(4).strip()
-        if url in existing or not is_relevant(title):
-            continue
-        if not any(r["url"] == url for r in results):
+        for m in re.finditer(
+            r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
+            html
+        ):
+            url = m.group(1)
+            title = m.group(2).strip()
+            if url in existing or url in seen_urls or not is_relevant(title):
+                continue
+            seen_urls.add(url)
             results.append({"title": title, "url": url, "section": "DOU.ua"})
+
+        for m in re.finditer(
+            r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
+            html
+        ):
+            url = f"https://jobs.dou.ua{m.group(1)}"
+            title = m.group(4).strip()
+            if url in existing or url in seen_urls or not is_relevant(title):
+                continue
+            seen_urls.add(url)
+            results.append({"title": title, "url": url, "section": "DOU.ua"})
+        time.sleep(2)
 
     log(f"  Found {len(results)} new on DOU")
     return results
@@ -125,20 +130,23 @@ def check_dou(cfg):
 
 def check_workua(cfg):
     log("Checking Work.ua...")
-    html = fetch_html(cfg["url"])
-    if not html:
-        return []
-
     existing = get_existing_urls()
     results = []
+    seen_urls = set()
 
-    for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
-        path = m.group(1)
-        url = f"https://www.work.ua{path}"
-        title = m.group(3).strip()
-        if url in existing or not is_relevant(title):
+    for search_url in cfg.get("urls", [cfg.get("url", "")]):
+        html = fetch_html(search_url)
+        if not html:
             continue
-        results.append({"title": title, "url": url, "section": "Work.ua"})
+        for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
+            path = m.group(1)
+            url = f"https://www.work.ua{path}"
+            title = m.group(3).strip()
+            if url in existing or url in seen_urls or not is_relevant(title):
+                continue
+            seen_urls.add(url)
+            results.append({"title": title, "url": url, "section": "Work.ua"})
+        time.sleep(2)
 
     log(f"  Found {len(results)} new on Work.ua")
     return results
