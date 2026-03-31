@@ -87,13 +87,20 @@ def check_djinni(cfg):
 
     keywords = cfg.get("rss_keywords", ["webflow", "shopify", "frontend", "no-code", "automation"])
     for kw in keywords:
-        rss_url = f"https://djinni.co/jobs/feed/?keywords={urllib.request.quote(kw)}"
-        xml = fetch_html(rss_url, extra_headers={'Referer': 'https://djinni.co/'})
-        if not xml:
-            log(f"  Djinni: empty response for '{kw}'")
+        # Try multiple possible RSS URL formats
+        candidates = [
+            f"https://djinni.co/jobs/rss/?primary_keyword={urllib.request.quote(kw)}",
+            f"https://djinni.co/jobs/rss/?keywords={urllib.request.quote(kw)}",
+        ]
+        xml = ""
+        for rss_url in candidates:
+            xml = fetch_html(rss_url, extra_headers={'Referer': 'https://djinni.co/'})
+            if xml and '<item>' in xml:
+                break
+        if not xml or '<item>' not in xml:
+            log(f"  Djinni: no RSS for '{kw}'")
             continue
 
-        # Parse RSS items: each item has <title> and <link>
         items = re.findall(r'<item>(.*?)</item>', xml, re.DOTALL)
         for item in items:
             title_m = re.search(r'<title><!\[CDATA\[([^\]]+)\]\]></title>', item)
@@ -130,18 +137,18 @@ def check_dou(cfg):
             html = fetch_html(url_page)
             if not html:
                 break
-            found_on_page = 0
+            total_on_page = 0
             for m in re.finditer(
                 r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
                 html
             ):
                 url = m.group(1)
                 title = m.group(2).strip()
+                total_on_page += 1
                 if url in existing or url in seen_urls or not is_relevant(title):
                     continue
                 seen_urls.add(url)
                 results.append({"title": title, "url": url, "section": "DOU.ua"})
-                found_on_page += 1
 
             for m in re.finditer(
                 r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
@@ -149,13 +156,13 @@ def check_dou(cfg):
             ):
                 url = f"https://jobs.dou.ua{m.group(1)}"
                 title = m.group(4).strip()
+                total_on_page += 1
                 if url in existing or url in seen_urls or not is_relevant(title):
                     continue
                 seen_urls.add(url)
                 results.append({"title": title, "url": url, "section": "DOU.ua"})
-                found_on_page += 1
 
-            if found_on_page == 0:
+            if total_on_page == 0:
                 break
             page += 1
             time.sleep(2)
@@ -177,18 +184,18 @@ def check_workua(cfg):
             html = fetch_html(url_page)
             if not html:
                 break
-            found_on_page = 0
+            total_on_page = 0
             for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
                 path = m.group(1)
                 url = f"https://www.work.ua{path}"
                 title = m.group(3).strip()
+                total_on_page += 1
                 if url in existing or url in seen_urls or not is_relevant(title):
                     continue
                 seen_urls.add(url)
                 results.append({"title": title, "url": url, "section": "Work.ua"})
-                found_on_page += 1
 
-            if found_on_page == 0:
+            if total_on_page == 0:
                 break
             page += 1
             time.sleep(2)
