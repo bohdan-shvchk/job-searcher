@@ -123,6 +123,24 @@ SOURCES = {
         ],
         "link_pattern": r'/en/jobs/\d+/',
     },
+    "Robota.ua": {
+        "enabled": True,
+        "urls": [
+            "https://robota.ua/ua/jobs/webflow",
+            "https://robota.ua/ua/jobs/shopify",
+            "https://robota.ua/ua/jobs/frontend",
+            "https://robota.ua/ua/jobs/no-code",
+        ],
+    },
+    "HH.ua": {
+        "enabled": True,
+        "urls": [
+            "https://hh.ua/search/vacancy?text=webflow+developer&area=5",
+            "https://hh.ua/search/vacancy?text=shopify+developer&area=5",
+            "https://hh.ua/search/vacancy?text=frontend+developer&area=5",
+            "https://hh.ua/search/vacancy?text=no-code+developer&area=5",
+        ],
+    },
 }
 
 # ============================================================

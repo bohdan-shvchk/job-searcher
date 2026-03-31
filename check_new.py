@@ -23,7 +23,16 @@ ANALYSES_FILE = os.path.join(BASE_DIR, "analyses.json")
 LOG_FILE = os.path.join(BASE_DIR, "check.log")
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Cache-Control': 'max-age=0',
 }
 
 
@@ -35,11 +44,17 @@ def log(msg):
         f.write(line + "\n")
 
 
-def fetch_html(url):
+def fetch_html(url, extra_headers=None):
     try:
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read().decode('utf-8', errors='replace')
+        headers = {**HEADERS, **(extra_headers or {})}
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read()
+            encoding = resp.headers.get_content_charset() or 'utf-8'
+            try:
+                return raw.decode(encoding, errors='replace')
+            except Exception:
+                return raw.decode('utf-8', errors='replace')
     except Exception as e:
         log(f"  Fetch error for {url}: {e}")
         return ""
@@ -71,18 +86,27 @@ def check_djinni(cfg):
     keywords = cfg.get("rss_keywords", ["webflow", "shopify", "frontend", "no-code", "automation"])
     for kw in keywords:
         rss_url = f"https://djinni.co/jobs/feed/?keywords={urllib.request.quote(kw)}"
-        xml = fetch_html(rss_url)
+        xml = fetch_html(rss_url, extra_headers={'Referer': 'https://djinni.co/'})
         if not xml:
+            log(f"  Djinni: empty response for '{kw}'")
             continue
-        for m in re.finditer(r'<link>https://djinni\.co(/jobs/(\d+)-[^<]+)</link>', xml):
-            url = f"https://djinni.co{m.group(1)}"
+
+        # Parse RSS items: each item has <title> and <link>
+        items = re.findall(r'<item>(.*?)</item>', xml, re.DOTALL)
+        for item in items:
+            title_m = re.search(r'<title><!\[CDATA\[([^\]]+)\]\]></title>', item)
+            if not title_m:
+                title_m = re.search(r'<title>([^<]+)</title>', item)
+            link_m = re.search(r'<link>(https://djinni\.co/jobs/[^<]+)</link>', item)
+            if not link_m:
+                link_m = re.search(r'<guid[^>]*>(https://djinni\.co/jobs/[^<]+)</guid>', item)
+            if not title_m or not link_m:
+                continue
+            title = title_m.group(1).strip()
+            url = link_m.group(1).strip()
             if url in existing or url in seen_urls:
                 continue
             seen_urls.add(url)
-            title_m = re.search(r'<title><!\[CDATA\[([^\]]+)\]\]></title>', xml[max(0, m.start()-500):m.start()+200])
-            if not title_m:
-                title_m = re.search(r'<title>([^<]+)</title>', xml[max(0, m.start()-500):m.start()+200])
-            title = title_m.group(1).strip() if title_m else m.group(1)
             if is_relevant(title):
                 results.append({"title": title, "url": url, "section": "Djinni.co"})
         time.sleep(2)
@@ -171,10 +195,93 @@ def check_workua(cfg):
     return results
 
 
+def check_robotaua(cfg):
+    log("Checking Robota.ua...")
+    existing = get_existing_urls()
+    results = []
+    seen_urls = set()
+
+    for base_url in cfg.get("urls", []):
+        page = 1
+        while True:
+            url_page = f"{base_url}?page={page}" if page > 1 else base_url
+            html = fetch_html(url_page)
+            if not html:
+                break
+            found_on_page = 0
+            for m in re.finditer(r'href="(https://robota\.ua/ua/job/(\d+)[^"]*)"', html):
+                url = m.group(1).split('?')[0]
+                if url in existing or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                # title is nearby
+                chunk = html[max(0, m.start()-100):m.end()+300]
+                title_m = re.search(r'<p[^>]*card-title[^>]*>([^<]+)<', chunk)
+                if not title_m:
+                    title_m = re.search(r'title="([^"]{5,})"', chunk)
+                if not title_m:
+                    continue
+                title = title_m.group(1).strip()
+                if not is_relevant(title):
+                    continue
+                results.append({"title": title, "url": url, "section": "Robota.ua"})
+                found_on_page += 1
+
+            if found_on_page == 0:
+                break
+            page += 1
+            time.sleep(2)
+
+    log(f"  Found {len(results)} new on Robota.ua")
+    return results
+
+
+def check_hh(cfg):
+    log("Checking HH.ua...")
+    existing = get_existing_urls()
+    results = []
+    seen_urls = set()
+
+    for base_url in cfg.get("urls", []):
+        page = 0
+        while True:
+            url_page = f"{base_url}&page={page}" if page > 0 else base_url
+            html = fetch_html(url_page, extra_headers={'Referer': 'https://hh.ua/'})
+            if not html:
+                break
+            found_on_page = 0
+            for m in re.finditer(r'href="(https://hh\.ua/vacancy/(\d+)[^"]*)"', html):
+                url = m.group(1).split('?')[0]
+                if url in existing or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                chunk = html[m.start():m.end()+400]
+                title_m = re.search(r'data-qa="vacancy-serp__vacancy-title"[^>]*>([^<]+)<', html[m.start():m.end()+600])
+                if not title_m:
+                    title_m = re.search(r'>([A-Za-zА-Яа-яЇїІіЄє][^<]{5,})</span', chunk)
+                if not title_m:
+                    continue
+                title = title_m.group(1).strip()
+                if not is_relevant(title):
+                    continue
+                results.append({"title": title, "url": url, "section": "HH.ua"})
+                found_on_page += 1
+
+            if found_on_page == 0:
+                break
+            page += 1
+            time.sleep(2)
+
+    log(f"  Found {len(results)} new on HH.ua")
+    return results
+
+
 PARSERS = {
     "Djinni": check_djinni,
     "DOU": check_dou,
     "Work.ua": check_workua,
+    "Robota.ua": check_robotaua,
+    "HH.ua": check_hh,
 }
 
 
@@ -220,7 +327,6 @@ def add_vacancy_to_md(section_name, title, url):
     with open(MD_FILE, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
-    # Update date
     with open(MD_FILE, "r", encoding="utf-8") as f:
         c = f.read()
     today_full = datetime.now().strftime("%Y-%m-%d")
@@ -276,10 +382,10 @@ def main():
     all_new = unique
 
     if not all_new:
-        log(f"No new vacancies found.")
+        log("No new vacancies found.")
         return
 
-    # Interleave by source so all sources are represented in the limit
+    # Interleave by source so all sources are represented evenly
     by_source = {}
     for v in all_new:
         by_source.setdefault(v["section"], []).append(v)
