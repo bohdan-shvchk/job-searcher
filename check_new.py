@@ -68,23 +68,23 @@ def check_djinni(cfg):
     results = []
     seen_urls = set()
 
-    for search_url in cfg.get("urls", [cfg.get("url", "")]):
-        html = fetch_html(search_url)
-        if not html:
+    keywords = cfg.get("rss_keywords", ["webflow", "shopify", "frontend", "no-code", "automation"])
+    for kw in keywords:
+        rss_url = f"https://djinni.co/jobs/feed/?keywords={urllib.request.quote(kw)}"
+        xml = fetch_html(rss_url)
+        if not xml:
             continue
-        for m in re.finditer(r'<a[^>]*href="(/jobs/(\d+)-[^"]*?)"[^>]*>', html):
-            path = m.group(1)
-            url = f"https://djinni.co{path}"
+        for m in re.finditer(r'<link>https://djinni\.co(/jobs/(\d+)-[^<]+)</link>', xml):
+            url = f"https://djinni.co{m.group(1)}"
             if url in existing or url in seen_urls:
                 continue
             seen_urls.add(url)
-            start = m.end()
-            chunk = html[start:start + 500]
-            title_m = re.search(r'>([^<]{10,})<', chunk)
-            if title_m:
-                title = title_m.group(1).strip()
-                if is_relevant(title):
-                    results.append({"title": title, "url": url, "section": "Djinni.co"})
+            title_m = re.search(r'<title><!\[CDATA\[([^\]]+)\]\]></title>', xml[max(0, m.start()-500):m.start()+200])
+            if not title_m:
+                title_m = re.search(r'<title>([^<]+)</title>', xml[max(0, m.start()-500):m.start()+200])
+            title = title_m.group(1).strip() if title_m else m.group(1)
+            if is_relevant(title):
+                results.append({"title": title, "url": url, "section": "Djinni.co"})
         time.sleep(2)
 
     log(f"  Found {len(results)} new on Djinni")
@@ -260,6 +260,18 @@ def main():
         log(f"No new vacancies found.")
         return
 
+    # Interleave by source so all sources are represented in the limit
+    by_source = {}
+    for v in all_new:
+        by_source.setdefault(v["section"], []).append(v)
+    interleaved = []
+    sources_list = list(by_source.values())
+    while any(sources_list):
+        for src in sources_list:
+            if src:
+                interleaved.append(src.pop(0))
+    all_new = interleaved
+
     MAX_PER_RUN = 25
     if len(all_new) > MAX_PER_RUN:
         log(f"\nTotal: {len(all_new)} new, processing first {MAX_PER_RUN}.\n")
@@ -287,7 +299,7 @@ def main():
 
         add_vacancy_to_md(v["section"], v["title"], v["url"])
         added += 1
-        time.sleep(6)
+        time.sleep(15)
 
     with open(ANALYSES_FILE, "w", encoding="utf-8") as f:
         json.dump(analyses, f, ensure_ascii=False, indent=2)

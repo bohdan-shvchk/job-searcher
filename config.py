@@ -100,13 +100,7 @@ TITLE_KEYWORDS = [
 SOURCES = {
     "Djinni": {
         "enabled": True,
-        "urls": [
-            "https://djinni.co/jobs/keyword-webflow/",
-            "https://djinni.co/jobs/keyword-shopify/",
-            "https://djinni.co/jobs/keyword-frontend/",
-            "https://djinni.co/jobs/keyword-no-code/",
-            "https://djinni.co/jobs/keyword-automation/",
-        ],
+        "rss_keywords": ["webflow", "shopify", "frontend developer", "no-code", "automation"],
         "link_pattern": r'/jobs/(\d+)-',
     },
     "DOU": {
