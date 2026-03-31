@@ -18,8 +18,10 @@ sys.path.insert(0, BASE_DIR)
 
 from config import GROQ_API_KEY, PROFILE, SOURCES
 
-MD_FILE = os.path.join(BASE_DIR, "vacancies.md")
-ANALYSES_FILE = os.path.join(BASE_DIR, "analyses.json")
+DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
+os.makedirs(DATA_DIR, exist_ok=True)
+MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
+ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
 PROFILE_FILE = os.path.join(BASE_DIR, "profile.md")
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY", GROQ_API_KEY)

@@ -16,8 +16,10 @@ from flask import Flask, jsonify, request, send_file
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MD_FILE = os.path.join(BASE_DIR, "vacancies.md")
-ANALYSES_FILE = os.path.join(BASE_DIR, "analyses.json")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join("/app/data"))
+os.makedirs(DATA_DIR, exist_ok=True)
+MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
+ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
 
 INTERVAL = 2 * 60 * 60  # 2 hours
 

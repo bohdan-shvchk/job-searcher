@@ -18,9 +18,11 @@ sys.path.insert(0, BASE_DIR)
 
 from config import SOURCES, TITLE_KEYWORDS, GROQ_API_KEY, PROFILE
 
-MD_FILE = os.path.join(BASE_DIR, "vacancies.md")
-ANALYSES_FILE = os.path.join(BASE_DIR, "analyses.json")
-LOG_FILE = os.path.join(BASE_DIR, "check.log")
+DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
+os.makedirs(DATA_DIR, exist_ok=True)
+MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
+ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
+LOG_FILE = os.path.join(DATA_DIR, "check.log")
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
