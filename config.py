@@ -148,4 +148,4 @@ WEB_HOST = "0.0.0.0"
 # 9. PAGE TITLE
 # ============================================================
 
-PAGE_TITLE = "Bohdan — Job Search"
+PAGE_TITLE = "Вакансії — Webflow / Shopify / Frontend / Automation"

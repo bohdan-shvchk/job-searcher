@@ -248,7 +248,7 @@
 <body>
 
 <header>
-  <h1>Вакансії UI/UX</h1>
+  <h1 id="pageTitle">Вакансії</h1>
   <div class="meta" id="meta"></div>
 </header>
 
@@ -482,6 +482,13 @@ function status(s) {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escA(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  if (cfg.title) {
+    document.getElementById('pageTitle').textContent = cfg.title;
+    document.title = cfg.title;
+  }
+});
 
 load();
 setInterval(load, REFRESH);
