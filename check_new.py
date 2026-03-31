@@ -272,12 +272,7 @@ def main():
                 interleaved.append(src.pop(0))
     all_new = interleaved
 
-    MAX_PER_RUN = 25
-    if len(all_new) > MAX_PER_RUN:
-        log(f"\nTotal: {len(all_new)} new, processing first {MAX_PER_RUN}.\n")
-        all_new = all_new[:MAX_PER_RUN]
-    else:
-        log(f"\nTotal: {len(all_new)} new vacancies.\n")
+    log(f"\nTotal: {len(all_new)} new vacancies.\n")
 
     analyses = {}
     if os.path.exists(ANALYSES_FILE):
