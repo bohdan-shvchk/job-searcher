@@ -97,32 +97,42 @@ def check_dou(cfg):
     results = []
     seen_urls = set()
 
-    for search_url in cfg.get("urls", [cfg.get("url", "")]):
-        html = fetch_html(search_url)
-        if not html:
-            continue
-        for m in re.finditer(
-            r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
-            html
-        ):
-            url = m.group(1)
-            title = m.group(2).strip()
-            if url in existing or url in seen_urls or not is_relevant(title):
-                continue
-            seen_urls.add(url)
-            results.append({"title": title, "url": url, "section": "DOU.ua"})
+    for base_url in cfg.get("urls", [cfg.get("url", "")]):
+        page = 0
+        while True:
+            url_page = f"{base_url}&page={page}" if page > 0 else base_url
+            html = fetch_html(url_page)
+            if not html:
+                break
+            found_on_page = 0
+            for m in re.finditer(
+                r'href="(https://jobs\.dou\.ua/companies/[^/]+/vacancies/\d+/)[^"]*"[^>]*>\s*([^<]+)',
+                html
+            ):
+                url = m.group(1)
+                title = m.group(2).strip()
+                if url in existing or url in seen_urls or not is_relevant(title):
+                    continue
+                seen_urls.add(url)
+                results.append({"title": title, "url": url, "section": "DOU.ua"})
+                found_on_page += 1
 
-        for m in re.finditer(
-            r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
-            html
-        ):
-            url = f"https://jobs.dou.ua{m.group(1)}"
-            title = m.group(4).strip()
-            if url in existing or url in seen_urls or not is_relevant(title):
-                continue
-            seen_urls.add(url)
-            results.append({"title": title, "url": url, "section": "DOU.ua"})
-        time.sleep(2)
+            for m in re.finditer(
+                r'href="(/companies/([^/]+)/vacancies/(\d+)/)[^"]*"[^>]*>\s*([^<]{5,})',
+                html
+            ):
+                url = f"https://jobs.dou.ua{m.group(1)}"
+                title = m.group(4).strip()
+                if url in existing or url in seen_urls or not is_relevant(title):
+                    continue
+                seen_urls.add(url)
+                results.append({"title": title, "url": url, "section": "DOU.ua"})
+                found_on_page += 1
+
+            if found_on_page == 0:
+                break
+            page += 1
+            time.sleep(2)
 
     log(f"  Found {len(results)} new on DOU")
     return results
@@ -134,19 +144,28 @@ def check_workua(cfg):
     results = []
     seen_urls = set()
 
-    for search_url in cfg.get("urls", [cfg.get("url", "")]):
-        html = fetch_html(search_url)
-        if not html:
-            continue
-        for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
-            path = m.group(1)
-            url = f"https://www.work.ua{path}"
-            title = m.group(3).strip()
-            if url in existing or url in seen_urls or not is_relevant(title):
-                continue
-            seen_urls.add(url)
-            results.append({"title": title, "url": url, "section": "Work.ua"})
-        time.sleep(2)
+    for base_url in cfg.get("urls", [cfg.get("url", "")]):
+        page = 1
+        while True:
+            url_page = f"{base_url}?page={page}" if page > 1 else base_url
+            html = fetch_html(url_page)
+            if not html:
+                break
+            found_on_page = 0
+            for m in re.finditer(r'<a[^>]*href="(/en/jobs/(\d+)/)"[^>]*>\s*([^<]{10,})', html):
+                path = m.group(1)
+                url = f"https://www.work.ua{path}"
+                title = m.group(3).strip()
+                if url in existing or url in seen_urls or not is_relevant(title):
+                    continue
+                seen_urls.add(url)
+                results.append({"title": title, "url": url, "section": "Work.ua"})
+                found_on_page += 1
+
+            if found_on_page == 0:
+                break
+            page += 1
+            time.sleep(2)
 
     log(f"  Found {len(results)} new on Work.ua")
     return results
