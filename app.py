@@ -23,6 +23,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
 ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
 STATUSES_FILE = os.path.join(DATA_DIR, "statuses.json")
+COMMENTS_FILE = os.path.join(DATA_DIR, "comments.json")
 
 if not os.path.exists(MD_FILE):
     open(MD_FILE, "w").close()
@@ -31,6 +32,9 @@ if not os.path.exists(ANALYSES_FILE):
         f.write("{}")
 if not os.path.exists(STATUSES_FILE):
     with open(STATUSES_FILE, "w") as f:
+        f.write("{}")
+if not os.path.exists(COMMENTS_FILE):
+    with open(COMMENTS_FILE, "w") as f:
         f.write("{}")
 
 INTERVAL = 2 * 60 * 60  # 2 hours
@@ -82,6 +86,18 @@ def save_statuses(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def load_comments():
+    if os.path.exists(COMMENTS_FILE):
+        with open(COMMENTS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_comments(data):
+    with open(COMMENTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 def parse_vacancies():
     if not os.path.exists(MD_FILE):
         return []
@@ -90,6 +106,7 @@ def parse_vacancies():
 
     analyses = load_analyses()
     statuses = load_statuses()
+    comments = load_comments()
     sections = []
     current_section = None
     lines = content.split("\n")
@@ -119,6 +136,7 @@ def parse_vacancies():
                 "remote": analysis.get("remote", ""),
                 "published": analysis.get("published", ""),
                 "vacancy_status": statuses.get(url, "new"),
+                "comment": comments.get(url, ""),
             })
 
     return sections
@@ -143,6 +161,10 @@ def remove_vacancy(url):
         if url in statuses:
             del statuses[url]
             save_statuses(statuses)
+        comments = load_comments()
+        if url in comments:
+            del comments[url]
+            save_comments(comments)
         return True
     return False
 
@@ -172,6 +194,22 @@ def api_set_status():
     statuses = load_statuses()
     statuses[url] = status
     save_statuses(statuses)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/vacancies/comment", methods=["PUT"])
+def api_set_comment():
+    data = request.json
+    url = data.get("url", "")
+    comment = data.get("comment", "")
+    if not url:
+        return jsonify({"ok": False, "error": "invalid"}), 400
+    comments = load_comments()
+    if comment:
+        comments[url] = comment
+    elif url in comments:
+        del comments[url]
+    save_comments(comments)
     return jsonify({"ok": True})
 
 

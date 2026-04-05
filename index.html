@@ -214,6 +214,18 @@
   .ss-btn.active-rejected     { background: var(--danger-bg);     color: var(--red);    border-color: var(--red); }
   .ss-btn.active-not_suitable { background: rgba(120,120,120,.2); color: var(--muted);  border-color: var(--muted); }
 
+  .comment-area {
+    width: 100%; margin-top: 10px; padding: 8px 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 0.78rem;
+    font-family: inherit; line-height: 1.5; resize: vertical;
+    min-height: 60px; outline: none; transition: border-color .2s;
+  }
+  .comment-area::placeholder { color: var(--muted); }
+  .comment-area:focus { border-color: var(--accent); }
+  .comment-saved { font-size: 0.65rem; color: var(--green); margin-top: 3px; opacity: 0; transition: opacity .3s; }
+  .comment-saved.show { opacity: 1; }
+
   .card.deleting { opacity: 0; max-height: 0; margin: 0; border: 0; transition: all .3s; }
 
   .status-bar {
@@ -463,6 +475,9 @@ function render() {
                 `<button class="ss-btn ${vs===key?'active-'+key:''}" onclick="setVacancyStatus(this,'${key}')">${label}</button>`
               ).join('')}
             </div>
+            <div class="panel-label" style="margin-top:12px">Коментар</div>
+            <textarea class="comment-area" placeholder="Залиш нотатку про цю вакансію..." onblur="saveComment(this)">${esc(v.comment||'')}</textarea>
+            <div class="comment-saved">Збережено</div>
             ${v.summary
               ? `<div class="panel-label" style="margin-top:12px">Аналіз</div><div class="panel-text">${esc(v.summary)}</div>`
               : '<div class="panel-no-analysis" style="margin-top:8px">Аналіз ще не проведено</div>'
@@ -519,6 +534,22 @@ async function setVacancyStatus(btn, newStatus) {
       btn.className = `ss-btn active-${newStatus}`;
       renderStatusFilters();
     }
+  } catch(e) { console.error(e); }
+}
+
+async function saveComment(textarea) {
+  const card = textarea.closest('.card');
+  const url = card.dataset.url;
+  const comment = textarea.value.trim();
+  try {
+    await fetch('/api/vacancies/comment', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, comment})
+    });
+    const saved = textarea.nextElementSibling;
+    saved.classList.add('show');
+    setTimeout(() => saved.classList.remove('show'), 2000);
   } catch(e) { console.error(e); }
 }
 
