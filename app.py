@@ -5,8 +5,8 @@ import re
 import os
 import json
 import csv
-import io
 import sys
+import io
 import threading
 import subprocess
 import time
@@ -22,13 +22,20 @@ DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 os.makedirs(DATA_DIR, exist_ok=True)
 MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
 ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
+STATUSES_FILE = os.path.join(DATA_DIR, "statuses.json")
+
 if not os.path.exists(MD_FILE):
     open(MD_FILE, "w").close()
 if not os.path.exists(ANALYSES_FILE):
     with open(ANALYSES_FILE, "w") as f:
         f.write("{}")
+if not os.path.exists(STATUSES_FILE):
+    with open(STATUSES_FILE, "w") as f:
+        f.write("{}")
 
 INTERVAL = 2 * 60 * 60  # 2 hours
+
+VALID_STATUSES = {"new", "applied", "rejected", "not_suitable", "interview"}
 
 
 def run_script(script):
@@ -63,6 +70,18 @@ def save_analyses(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def load_statuses():
+    if os.path.exists(STATUSES_FILE):
+        with open(STATUSES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_statuses(data):
+    with open(STATUSES_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 def parse_vacancies():
     if not os.path.exists(MD_FILE):
         return []
@@ -70,6 +89,7 @@ def parse_vacancies():
         content = f.read()
 
     analyses = load_analyses()
+    statuses = load_statuses()
     sections = []
     current_section = None
     lines = content.split("\n")
@@ -98,7 +118,7 @@ def parse_vacancies():
                 "salary": analysis.get("salary", ""),
                 "remote": analysis.get("remote", ""),
                 "published": analysis.get("published", ""),
-                "status": analysis.get("status", ""),
+                "vacancy_status": statuses.get(url, "new"),
             })
 
     return sections
@@ -119,6 +139,10 @@ def remove_vacancy(url):
         if url in analyses:
             del analyses[url]
             save_analyses(analyses)
+        statuses = load_statuses()
+        if url in statuses:
+            del statuses[url]
+            save_statuses(statuses)
         return True
     return False
 
@@ -138,6 +162,19 @@ def api_vacancies():
     return jsonify(parse_vacancies())
 
 
+@app.route("/api/vacancies/status", methods=["PUT"])
+def api_set_status():
+    data = request.json
+    url = data.get("url", "")
+    status = data.get("status", "")
+    if not url or status not in VALID_STATUSES:
+        return jsonify({"ok": False, "error": "invalid"}), 400
+    statuses = load_statuses()
+    statuses[url] = status
+    save_statuses(statuses)
+    return jsonify({"ok": True})
+
+
 @app.route("/api/vacancies", methods=["DELETE"])
 def api_delete():
     url = request.json.get("url", "")
@@ -150,19 +187,32 @@ def api_delete():
 def api_export():
     sections = parse_vacancies()
     analyses = load_analyses()
+
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Title", "URL", "Source", "Date", "Score", "Salary", "Remote", "Type", "Summary"])
+    writer.writerow(["Title", "URL", "Source", "Date", "Score", "Salary", "Remote", "Type", "Status", "Summary"])
+
     for section in sections:
         for v in section["items"]:
             writer.writerow([
-                v["title"], v["url"], section["name"], v.get("date",""),
-                v.get("score",""), v.get("salary",""), v.get("remote",""),
-                v.get("type",""), v.get("summary",""),
+                v["title"],
+                v["url"],
+                section["name"],
+                v.get("date", ""),
+                v.get("score", ""),
+                v.get("salary", ""),
+                v.get("remote", ""),
+                v.get("type", ""),
+                v.get("vacancy_status", "new"),
+                v.get("summary", ""),
             ])
+
     output.seek(0)
-    return Response(output.getvalue(), mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=vacancies.csv"})
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=vacancies.csv"}
+    )
 
 
 t = threading.Thread(target=worker_loop, daemon=True)

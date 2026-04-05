@@ -39,9 +39,18 @@
   header h1 { font-size: 1.2rem; font-weight: 600; }
   .meta { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
 
-  /* Filters */
+  .top-actions { display: flex; justify-content: flex-end; padding: 6px 0 0; }
+  .export-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.68rem; padding: 4px 10px;
+    border-radius: 6px; cursor: pointer; transition: all .2s;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Score filters */
+  .filter-group-label { color: var(--muted); font-size: 0.65rem; padding: 10px 0 2px; }
   .filters {
-    display: flex; gap: 6px; padding: 12px 0 4px;
+    display: flex; gap: 6px; padding: 4px 0;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
   }
   .filters::-webkit-scrollbar { display: none; }
@@ -53,37 +62,49 @@
   }
   .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+  /* Status filters */
+  .status-filters {
+    display: flex; gap: 6px; padding: 4px 0 8px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .status-filters::-webkit-scrollbar { display: none; }
+  .sf-btn {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.72rem; padding: 5px 10px;
+    border-radius: 16px; white-space: nowrap; cursor: pointer;
+    transition: all .2s;
+  }
+  .sf-btn.active { color: #fff; }
+  .sf-btn[data-sf="all"].active          { background: var(--accent); border-color: var(--accent); }
+  .sf-btn[data-sf="new"].active          { background: #00a8ff; border-color: #00a8ff; }
+  .sf-btn[data-sf="applied"].active      { background: #a29bfe; border-color: #a29bfe; }
+  .sf-btn[data-sf="interview"].active    { background: var(--yellow); border-color: var(--yellow); color: #111; }
+  .sf-btn[data-sf="rejected"].active     { background: var(--red); border-color: var(--red); }
+  .sf-btn[data-sf="not_suitable"].active { background: var(--muted); border-color: var(--muted); }
+
   /* Sort controls */
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0 2px; gap: 8px;
+    padding: 4px 0 2px; gap: 8px;
   }
-  .sort-group {
-    display: flex; gap: 4px; align-items: center;
-  }
-  .sort-label {
-    color: var(--muted); font-size: 0.68rem; margin-right: 2px;
-  }
+  .sort-group { display: flex; gap: 4px; align-items: center; }
+  .sort-label { color: var(--muted); font-size: 0.68rem; margin-right: 2px; }
   .sort-btn {
     background: var(--card); border: 1px solid var(--border);
     color: var(--muted); font-size: 0.68rem; padding: 3px 8px;
-    border-radius: 4px; cursor: pointer; transition: all .2s;
-    white-space: nowrap;
+    border-radius: 4px; cursor: pointer; transition: all .2s; white-space: nowrap;
   }
   .sort-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .sort-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
 
-  /* Search */
   .search-box {
     background: var(--card); border: 1px solid var(--border);
     color: var(--text); font-size: 0.75rem; padding: 4px 10px;
-    border-radius: 6px; outline: none; width: 160px;
-    transition: border-color .2s;
+    border-radius: 6px; outline: none; width: 160px; transition: border-color .2s;
   }
   .search-box::placeholder { color: var(--muted); }
   .search-box:focus { border-color: var(--accent); }
 
-  /* Section */
   .section { margin-top: 18px; }
   .section-hdr {
     font-size: 0.9rem; font-weight: 600; color: var(--accent);
@@ -95,44 +116,31 @@
     font-size: 0.65rem; padding: 2px 7px; border-radius: 10px;
   }
 
-  /* Card */
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 8px;
-    overflow: hidden;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 8px; overflow: hidden;
   }
-
   .card-header {
-    padding: 12px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    cursor: pointer;
-    position: relative;
+    padding: 12px; display: flex; align-items: flex-start;
+    gap: 10px; cursor: pointer; position: relative;
     -webkit-tap-highlight-color: transparent;
   }
   .card-header:active { background: rgba(255,255,255,.02); }
 
   .score-badge {
-    flex-shrink: 0;
-    width: 36px; height: 36px;
-    border-radius: 10px;
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; font-weight: 700;
   }
   .score-high { background: rgba(46,213,115,.2); color: var(--green); }
-  .score-mid { background: rgba(255,165,2,.2); color: var(--yellow); }
-  .score-low { background: rgba(255,71,87,.15); color: var(--red); }
-  .score-none { background: var(--border); color: var(--muted); }
+  .score-mid  { background: rgba(255,165,2,.2);  color: var(--yellow); }
+  .score-low  { background: rgba(255,71,87,.15); color: var(--red); }
+  .score-none { background: var(--border);       color: var(--muted); }
 
   .card-info { flex: 1; min-width: 0; padding-right: 36px; }
-
   .card-title {
     color: var(--link); text-decoration: none;
-    font-size: 0.85rem; line-height: 1.3;
-    display: block; word-wrap: break-word;
+    font-size: 0.85rem; line-height: 1.3; display: block; word-wrap: break-word;
   }
   .card-title:hover { text-decoration: underline; }
 
@@ -140,97 +148,81 @@
     display: flex; gap: 6px; flex-wrap: wrap;
     margin-top: 5px; font-size: 0.68rem; color: var(--muted);
   }
-  .tag {
-    background: var(--border); padding: 1px 6px;
-    border-radius: 4px; white-space: nowrap;
-  }
-  .tag-date { background: rgba(108,99,255,.15); color: var(--accent); }
+  .tag { background: var(--border); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+  .tag-date     { background: rgba(108,99,255,.15); color: var(--accent); }
   .tag-inactive { color: var(--red); background: var(--danger-bg); }
-  .tag-salary { background: rgba(46,213,115,.12); color: var(--green); }
-  .tag-new {
+  .tag-salary   { background: rgba(46,213,115,.12); color: var(--green); }
+  .tag-seen-new {
     background: rgba(0,168,255,.2); color: #00a8ff;
     font-weight: 600; animation: pulse 2s ease-in-out infinite;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .6; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* Vacancy status badge */
+  .vstatus {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.65rem; padding: 1px 7px; border-radius: 4px;
+    font-weight: 600; white-space: nowrap; cursor: default;
   }
+  .vstatus-new          { background: rgba(0,168,255,.15);  color: #00a8ff; }
+  .vstatus-applied      { background: rgba(162,155,254,.15); color: #a29bfe; }
+  .vstatus-interview    { background: rgba(255,165,2,.15);  color: var(--yellow); }
+  .vstatus-rejected     { background: var(--danger-bg);     color: var(--red); }
+  .vstatus-not_suitable { background: rgba(120,120,120,.15); color: var(--muted); }
 
   .card-actions {
-    display: flex; gap: 2px;
-    position: absolute; top: 8px; right: 8px;
+    display: flex; gap: 2px; position: absolute; top: 8px; right: 8px;
   }
-
   .btn-icon {
-    width: 30px; height: 30px; border: none;
-    background: transparent; color: var(--muted);
-    font-size: 1rem; cursor: pointer; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .15s;
+    width: 30px; height: 30px; border: none; background: transparent;
+    color: var(--muted); font-size: 1rem; cursor: pointer; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
   }
   .btn-icon:hover { background: var(--border); color: var(--text); }
-  .btn-del:hover { background: var(--danger-bg); color: var(--danger); }
+  .btn-del:hover  { background: var(--danger-bg); color: var(--danger); }
   .btn-del:active { transform: scale(.9); }
 
-  /* Chevron — left side */
   .chevron {
-    flex-shrink: 0;
-    width: 20px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.6rem; color: var(--muted);
-    transition: transform .25s;
-    align-self: center;
+    flex-shrink: 0; width: 20px; display: flex; align-items: center;
+    justify-content: center; font-size: 0.6rem; color: var(--muted);
+    transition: transform .25s; align-self: center;
   }
   .card.open .chevron { transform: rotate(180deg); }
 
-  /* Accordion panel */
-  .card-panel {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height .3s ease, padding .3s ease;
-  }
-  .card.open .card-panel {
-    max-height: 300px;
-  }
+  .card-panel { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .card.open .card-panel { max-height: 420px; }
 
-  .panel-inner {
-    padding: 0 12px 12px;
-    border-top: 1px solid var(--border);
-  }
-
+  .panel-inner { padding: 0 12px 12px; border-top: 1px solid var(--border); }
   .panel-label {
-    font-size: 0.68rem; color: var(--accent);
-    font-weight: 600; margin: 10px 0 4px;
-    text-transform: uppercase;
-    letter-spacing: .5px;
+    font-size: 0.68rem; color: var(--accent); font-weight: 600;
+    margin: 10px 0 4px; text-transform: uppercase; letter-spacing: .5px;
   }
-  .panel-text {
-    font-size: 0.8rem; line-height: 1.5;
-    color: var(--text);
-  }
-  .panel-no-analysis {
-    font-size: 0.78rem; color: var(--muted);
-    font-style: italic; padding: 8px 0;
-  }
+  .panel-text { font-size: 0.8rem; line-height: 1.5; color: var(--text); }
+  .panel-no-analysis { font-size: 0.78rem; color: var(--muted); font-style: italic; padding: 8px 0; }
 
-  /* Delete animation */
-  .card.deleting {
-    opacity: 0; max-height: 0; margin: 0;
-    border: 0; transition: all .3s;
+  /* Status selector in panel */
+  .status-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .ss-btn {
+    font-size: 0.68rem; padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--muted); cursor: pointer; transition: all .2s;
   }
+  .ss-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ss-btn.active-new          { background: rgba(0,168,255,.2);   color: #00a8ff;       border-color: #00a8ff; }
+  .ss-btn.active-applied      { background: rgba(162,155,254,.2); color: #a29bfe;       border-color: #a29bfe; }
+  .ss-btn.active-interview    { background: rgba(255,165,2,.2);   color: var(--yellow); border-color: var(--yellow); }
+  .ss-btn.active-rejected     { background: var(--danger-bg);     color: var(--red);    border-color: var(--red); }
+  .ss-btn.active-not_suitable { background: rgba(120,120,120,.2); color: var(--muted);  border-color: var(--muted); }
 
-  /* Status bar */
+  .card.deleting { opacity: 0; max-height: 0; margin: 0; border: 0; transition: all .3s; }
+
   .status-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: var(--card); border-top: 1px solid var(--border);
-    padding: 8px; text-align: center;
-    font-size: 0.72rem; color: var(--muted); z-index: 10;
+    padding: 8px; text-align: center; font-size: 0.72rem; color: var(--muted); z-index: 10;
   }
-  .dot {
-    display: inline-block; width: 6px; height: 6px;
-    border-radius: 50%; margin-right: 4px; vertical-align: middle;
-  }
-  .dot-ok { background: var(--green); }
+  .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .dot-ok  { background: var(--green); }
   .dot-err { background: var(--red); }
 
   .empty { color: var(--muted); text-align: center; padding: 40px 0; font-size: .9rem; }
@@ -252,7 +244,16 @@
   <div class="meta" id="meta"></div>
 </header>
 
+<div class="top-actions">
+  <button class="export-btn" onclick="exportCSV()">⬇ Експорт CSV</button>
+</div>
+
+<div class="filter-group-label">Оцінка</div>
 <div class="filters" id="filters"></div>
+
+<div class="filter-group-label">Статус</div>
+<div class="status-filters" id="statusFilters"></div>
+
 <div class="toolbar">
   <div class="sort-group">
     <span class="sort-label">Sort:</span>
@@ -269,18 +270,27 @@
 </div>
 
 <script>
-const app = document.getElementById('app');
+const appEl = document.getElementById('app');
 const filtersEl = document.getElementById('filters');
+const statusFiltersEl = document.getElementById('statusFilters');
 const REFRESH = 30000;
 const SKIP = ['Пошукові запити для самостійного моніторингу'];
 
+const STATUS_LABELS = {
+  new: 'New',
+  applied: 'Відправив заявку',
+  interview: 'Очікування інтерв\'ю',
+  rejected: 'Відмовили',
+  not_suitable: 'Не підходить',
+};
+
 let allData = [];
 let activeFilter = 'all';
+let activeStatusFilter = 'all';
 let activeSort = 'default';
 let searchQuery = '';
 let openCards = new Set();
 
-// Seen tracking via localStorage
 function getSeenUrls() {
   try { return new Set(JSON.parse(localStorage.getItem('seenUrls') || '[]')); }
   catch { return new Set(); }
@@ -290,41 +300,64 @@ function markSeen(url) {
   seen.add(url);
   localStorage.setItem('seenUrls', JSON.stringify([...seen]));
 }
-function isNew(url) { return !getSeenUrls().has(url); }
+function isNewSeen(url) { return !getSeenUrls().has(url); }
 
 async function load() {
   try {
     const r = await fetch('/api/vacancies');
     allData = await r.json();
     renderFilters();
+    renderStatusFilters();
     render();
     status('ok');
   } catch(e) { status('err'); }
 }
 
 function renderFilters() {
-  const scores = {all:0, hot:0, ok:0, skip:0, new:0};
+  const counts = {all:0, hot:0, ok:0, skip:0, new:0};
   for (const s of allData) {
     if (SKIP.includes(s.name)) continue;
     for (const v of s.items) {
-      scores.all++;
-      if (isNew(v.url)) scores.new++;
-      if (v.score === null) {}
-      else if (v.score >= 6) scores.hot++;
-      else if (v.score >= 4) scores.ok++;
-      else scores.skip++;
+      counts.all++;
+      if (isNewSeen(v.url)) counts.new++;
+      if (v.score >= 6) counts.hot++;
+      else if (v.score >= 4) counts.ok++;
+      else if (v.score !== null) counts.skip++;
     }
   }
   filtersEl.innerHTML = `
-    <button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Всі ${scores.all}</button>
-    <button class="filter-btn ${activeFilter==='new'?'active':''}" onclick="setFilter('new')">New ${scores.new}</button>
-    <button class="filter-btn ${activeFilter==='hot'?'active':''}" onclick="setFilter('hot')">Hot ${scores.hot}</button>
-    <button class="filter-btn ${activeFilter==='ok'?'active':''}" onclick="setFilter('ok')">OK ${scores.ok}</button>
-    <button class="filter-btn ${activeFilter==='skip'?'active':''}" onclick="setFilter('skip')">Skip ${scores.skip}</button>
+    <button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Всі ${counts.all}</button>
+    <button class="filter-btn ${activeFilter==='new'?'active':''}" onclick="setFilter('new')">Непереглянуті ${counts.new}</button>
+    <button class="filter-btn ${activeFilter==='hot'?'active':''}" onclick="setFilter('hot')">Hot ${counts.hot}</button>
+    <button class="filter-btn ${activeFilter==='ok'?'active':''}" onclick="setFilter('ok')">OK ${counts.ok}</button>
+    <button class="filter-btn ${activeFilter==='skip'?'active':''}" onclick="setFilter('skip')">Skip ${counts.skip}</button>
   `;
 }
 
+function renderStatusFilters() {
+  const counts = {all:0, new:0, applied:0, interview:0, rejected:0, not_suitable:0};
+  for (const s of allData) {
+    if (SKIP.includes(s.name)) continue;
+    for (const v of s.items) {
+      counts.all++;
+      const vs = v.vacancy_status || 'new';
+      if (counts[vs] !== undefined) counts[vs]++;
+    }
+  }
+  statusFiltersEl.innerHTML = Object.entries({
+    all: `Всі ${counts.all}`,
+    new: `New ${counts.new}`,
+    applied: `Відправив заявку ${counts.applied}`,
+    interview: `Очікування інтерв'ю ${counts.interview}`,
+    rejected: `Відмовили ${counts.rejected}`,
+    not_suitable: `Не підходить ${counts.not_suitable}`,
+  }).map(([key, label]) =>
+    `<button class="sf-btn ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">${label}</button>`
+  ).join('');
+}
+
 function setFilter(f) { activeFilter = f; renderFilters(); render(); }
+function setStatusFilter(f) { activeStatusFilter = f; renderStatusFilters(); render(); }
 
 function setSort(s) {
   activeSort = s;
@@ -338,7 +371,6 @@ function onSearch(q) { searchQuery = q.toLowerCase().trim(); render(); }
 function parseDate(v) {
   const d = v.published || v.date || '';
   if (!d) return 0;
-  // Handle DD.MM or DD.MM.YYYY
   const parts = d.split('.');
   if (parts.length === 2) return parseInt(parts[1]) * 100 + parseInt(parts[0]);
   if (parts.length === 3) return parseInt(parts[2]) * 10000 + parseInt(parts[1]) * 100 + parseInt(parts[0]);
@@ -348,40 +380,39 @@ function parseDate(v) {
 function sortItems(items) {
   if (activeSort === 'default') return items;
   const sorted = [...items];
-  if (activeSort === 'score') {
-    sorted.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-  } else if (activeSort === 'date') {
-    sorted.sort((a, b) => parseDate(b) - parseDate(a));
-  }
+  if (activeSort === 'score') sorted.sort((a,b) => (b.score??-1)-(a.score??-1));
+  else if (activeSort === 'date') sorted.sort((a,b) => parseDate(b)-parseDate(a));
   return sorted;
 }
 
 function matchesSearch(v) {
   if (!searchQuery) return true;
-  const text = [v.title, v.type, v.summary, v.salary, v.remote].join(' ').toLowerCase();
-  return text.includes(searchQuery);
+  return [v.title,v.type,v.summary,v.salary,v.remote].join(' ').toLowerCase().includes(searchQuery);
 }
 
 function passFilter(v) {
-  if (activeFilter === 'all') return true;
-  if (activeFilter === 'new') return isNew(v.url);
+  if (activeFilter === 'new') return isNewSeen(v.url);
   if (activeFilter === 'hot') return v.score >= 6;
-  if (activeFilter === 'ok') return v.score >= 4 && v.score < 6;
+  if (activeFilter === 'ok')  return v.score >= 4 && v.score < 6;
   if (activeFilter === 'skip') return v.score !== null && v.score < 4;
   return true;
 }
 
+function passStatusFilter(v) {
+  if (activeStatusFilter === 'all') return true;
+  return (v.vacancy_status || 'new') === activeStatusFilter;
+}
+
 function scoreClass(s) {
-  if (s === null) return 'score-none';
+  if (s === null || s === undefined) return 'score-none';
   if (s >= 6) return 'score-high';
   if (s >= 4) return 'score-mid';
   return 'score-low';
 }
 
-function getDateTag(v) {
-  const d = v.published || v.date;
-  if (!d) return '';
-  return `<span class="tag tag-date">${esc(d)}</span>`;
+function vstatusTag(vs) {
+  const label = STATUS_LABELS[vs] || vs;
+  return `<span class="vstatus vstatus-${vs}">${label}</span>`;
 }
 
 function render() {
@@ -390,7 +421,9 @@ function render() {
 
   for (const section of allData) {
     if (SKIP.includes(section.name)) continue;
-    const filtered = sortItems(section.items.filter(v => passFilter(v) && matchesSearch(v)));
+    const filtered = sortItems(
+      section.items.filter(v => passFilter(v) && passStatusFilter(v) && matchesSearch(v))
+    );
     if (!filtered.length) continue;
     total += filtered.length;
 
@@ -398,34 +431,41 @@ function render() {
       <div class="section-hdr">${esc(section.name)}<span class="section-count">${filtered.length}</span></div>`;
 
     for (const v of filtered) {
-      const sc = v.score !== null ? v.score + '/10' : '?';
+      const sc = v.score !== null && v.score !== undefined ? v.score + '/10' : '?';
       const isOpen = openCards.has(v.url);
+      const vs = v.vacancy_status || 'new';
 
       html += `
-      <div class="card ${isOpen ? 'open' : ''}" data-url="${escA(v.url)}">
+      <div class="card ${isOpen?'open':''}" data-url="${escA(v.url)}" data-vstatus="${vs}">
         <div class="card-header" onclick="toggle(this)">
           <div class="chevron">▼</div>
           <div class="score-badge ${scoreClass(v.score)}">${sc}</div>
           <div class="card-info">
             <a class="card-title" href="${escA(v.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(v.title)}</a>
             <div class="card-meta">
+              ${vstatusTag(vs)}
               ${v.type ? `<span class="tag">${esc(v.type)}</span>` : ''}
               ${v.remote ? `<span class="tag">${esc(v.remote)}</span>` : ''}
               ${v.salary && v.salary !== 'Не вказана' ? `<span class="tag tag-salary">${esc(v.salary)}</span>` : ''}
-              ${getDateTag(v)}
-              ${v.status === 'inactive' ? '<span class="tag tag-inactive">inactive</span>' : ''}
-              ${isNew(v.url) ? '<span class="tag tag-new">new</span>' : ''}
+              ${v.date ? `<span class="tag tag-date">${esc(v.date)}</span>` : ''}
+              ${isNewSeen(v.url) ? '<span class="tag tag-seen-new">непереглянута</span>' : ''}
             </div>
           </div>
           <div class="card-actions">
-            <button class="btn-icon btn-del" onclick="event.stopPropagation(); del(this)" title="Видалити">✕</button>
+            <button class="btn-icon btn-del" onclick="event.stopPropagation();del(this)" title="Видалити">✕</button>
           </div>
         </div>
         <div class="card-panel">
           <div class="panel-inner">
+            <div class="panel-label">Статус</div>
+            <div class="status-selector">
+              ${Object.entries(STATUS_LABELS).map(([key, label]) =>
+                `<button class="ss-btn ${vs===key?'active-'+key:''}" onclick="setVacancyStatus(this,'${key}')">${label}</button>`
+              ).join('')}
+            </div>
             ${v.summary
-              ? `<div class="panel-label">Аналіз</div><div class="panel-text">${esc(v.summary)}</div>`
-              : '<div class="panel-no-analysis">Аналіз ще не проведено</div>'
+              ? `<div class="panel-label" style="margin-top:12px">Аналіз</div><div class="panel-text">${esc(v.summary)}</div>`
+              : '<div class="panel-no-analysis" style="margin-top:8px">Аналіз ще не проведено</div>'
             }
           </div>
         </div>
@@ -435,7 +475,7 @@ function render() {
   }
 
   if (!total) html = '<div class="empty">Нічого не знайдено</div>';
-  app.innerHTML = html;
+  appEl.innerHTML = html;
   document.getElementById('meta').textContent =
     `Всього: ${total} · Оновлено: ${new Date().toLocaleTimeString('uk-UA')}`;
 }
@@ -446,15 +486,40 @@ function toggle(hdr) {
   card.classList.toggle('open');
   if (card.classList.contains('open')) {
     openCards.add(url);
-    if (isNew(url)) {
+    if (isNewSeen(url)) {
       markSeen(url);
-      const newTag = card.querySelector('.tag-new');
-      if (newTag) newTag.remove();
+      const t = card.querySelector('.tag-seen-new');
+      if (t) t.remove();
       renderFilters();
     }
   } else {
     openCards.delete(url);
   }
+}
+
+async function setVacancyStatus(btn, newStatus) {
+  const card = btn.closest('.card');
+  const url = card.dataset.url;
+  try {
+    const r = await fetch('/api/vacancies/status', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, status: newStatus})
+    });
+    if (r.ok) {
+      card.dataset.vstatus = newStatus;
+      // update status badge
+      const badge = card.querySelector('.vstatus');
+      if (badge) {
+        badge.className = `vstatus vstatus-${newStatus}`;
+        badge.textContent = STATUS_LABELS[newStatus] || newStatus;
+      }
+      // update buttons
+      card.querySelectorAll('.ss-btn').forEach(b => b.className = 'ss-btn');
+      btn.className = `ss-btn active-${newStatus}`;
+      renderStatusFilters();
+    }
+  } catch(e) { console.error(e); }
 }
 
 async function del(btn) {
@@ -473,6 +538,10 @@ async function del(btn) {
   } catch(e) { card.classList.remove('deleting'); alert('Нема зв\'язку'); }
 }
 
+function exportCSV() {
+  window.location.href = '/api/export';
+}
+
 function status(s) {
   const sb = document.getElementById('statusBar');
   sb.innerHTML = s === 'ok'
@@ -483,11 +552,8 @@ function status(s) {
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escA(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-fetch('/api/config').then(r => r.json()).then(cfg => {
-  if (cfg.title) {
-    document.getElementById('pageTitle').textContent = cfg.title;
-    document.title = cfg.title;
-  }
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  if (cfg.title) { document.getElementById('pageTitle').textContent = cfg.title; document.title = cfg.title; }
 });
 
 load();
