@@ -4,6 +4,8 @@
 import re
 import os
 import json
+import csv
+import io
 import sys
 import threading
 import subprocess
@@ -12,7 +14,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import WEB_PORT, WEB_HOST, PAGE_TITLE
 
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, Response
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -142,6 +144,25 @@ def api_delete():
     if remove_vacancy(url):
         return jsonify({"ok": True})
     return jsonify({"ok": False, "error": "not found"}), 404
+
+
+@app.route("/api/export")
+def api_export():
+    sections = parse_vacancies()
+    analyses = load_analyses()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Title", "URL", "Source", "Date", "Score", "Salary", "Remote", "Type", "Summary"])
+    for section in sections:
+        for v in section["items"]:
+            writer.writerow([
+                v["title"], v["url"], section["name"], v.get("date",""),
+                v.get("score",""), v.get("salary",""), v.get("remote",""),
+                v.get("type",""), v.get("summary",""),
+            ])
+    output.seek(0)
+    return Response(output.getvalue(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=vacancies.csv"})
 
 
 t = threading.Thread(target=worker_loop, daemon=True)
