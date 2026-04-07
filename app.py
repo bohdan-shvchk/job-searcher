@@ -215,7 +215,13 @@ def api_set_comment():
 
 @app.route("/api/vacancies", methods=["DELETE"])
 def api_delete():
-    url = request.json.get("url", "")
+    data = request.json
+    # bulk delete
+    if "urls" in data:
+        for url in data["urls"]:
+            remove_vacancy(url)
+        return jsonify({"ok": True})
+    url = data.get("url", "")
     if remove_vacancy(url):
         return jsonify({"ok": True})
     return jsonify({"ok": False, "error": "not found"}), 404
