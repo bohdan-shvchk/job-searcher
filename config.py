@@ -89,8 +89,28 @@ SEARCH_KEYWORDS = [
 # Keywords that vacancy titles must contain (at least one)
 TITLE_KEYWORDS = [
     "webflow", "shopify", "frontend", "front-end", "front end",
-    "web developer", "no-code", "nocode", "automation", "html",
-    "розробник", "верстальник", "фронтенд",
+    "web developer", "no-code", "nocode", "html/css",
+    "workflow automation", "n8n", "make.com", "zapier",
+    "розробник сайтів", "верстальник", "фронтенд",
+]
+
+# Keywords that immediately exclude a vacancy if found in the title
+EXCLUDE_TITLE_KEYWORDS = [
+    "backend", "back-end", "back end",
+    "python developer", "python dev",
+    "java ", "java,", "java/", ".net", "c#",
+    "devops", "sre ", "site reliability",
+    "qa ", "qа ", "quality assurance", "тестувальник", "автоматизоване тестування",
+    "android", "ios ", "mobile developer", "mobile dev",
+    "flutter", "react native",
+    "unity", "game dev", "gamedev",
+    "embedded", "hardware",
+    "c++ ", "c/c++",
+    "ruby ", "rails",
+    "data engineer", "data scientist", "machine learning", "ml engineer",
+    "blockchain", "solidity", "web3",
+    "magento", "drupal",
+    "1c ", "1с ",
 ]
 
 # ============================================================
@@ -100,7 +120,7 @@ TITLE_KEYWORDS = [
 SOURCES = {
     "Djinni": {
         "enabled": True,
-        "rss_keywords": ["webflow", "shopify", "frontend developer", "no-code", "automation"],
+        "rss_keywords": ["webflow", "shopify", "frontend developer", "no-code", "n8n"],
         "link_pattern": r'/jobs/(\d+)-',
     },
     "DOU": {
@@ -109,7 +129,7 @@ SOURCES = {
             "https://jobs.dou.ua/vacancies/?search=Webflow+Developer",
             "https://jobs.dou.ua/vacancies/?search=Shopify+Developer",
             "https://jobs.dou.ua/vacancies/?search=Frontend+Developer",
-            "https://jobs.dou.ua/vacancies/?search=No-code",
+            "https://jobs.dou.ua/vacancies/?search=No-code+Developer",
         ],
         "link_pattern": r'/companies/[^/]+/vacancies/\d+/',
     },
@@ -119,7 +139,7 @@ SOURCES = {
             "https://www.work.ua/en/jobs-webflow+developer/",
             "https://www.work.ua/en/jobs-shopify+developer/",
             "https://www.work.ua/en/jobs-frontend+developer/",
-            "https://www.work.ua/en/jobs-automation+specialist/",
+            "https://www.work.ua/en/jobs-no-code+developer/",
         ],
         "link_pattern": r'/en/jobs/\d+/',
     },

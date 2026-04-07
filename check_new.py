@@ -16,7 +16,7 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
-from config import SOURCES, TITLE_KEYWORDS, GROQ_API_KEY, PROFILE
+from config import SOURCES, TITLE_KEYWORDS, EXCLUDE_TITLE_KEYWORDS, GROQ_API_KEY, PROFILE
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -67,6 +67,8 @@ def get_existing_urls():
 
 def is_relevant(title):
     t = title.lower()
+    if any(kw in t for kw in EXCLUDE_TITLE_KEYWORDS):
+        return False
     return any(kw in t for kw in TITLE_KEYWORDS)
 
 
