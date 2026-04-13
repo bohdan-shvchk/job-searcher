@@ -24,22 +24,29 @@ MD_FILE = os.path.join(DATA_DIR, "vacancies.md")
 ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
 STATUSES_FILE = os.path.join(DATA_DIR, "statuses.json")
 COMMENTS_FILE = os.path.join(DATA_DIR, "comments.json")
+CUSTOM_STATUSES_FILE = os.path.join(DATA_DIR, "custom_statuses.json")
 
-if not os.path.exists(MD_FILE):
-    open(MD_FILE, "w").close()
-if not os.path.exists(ANALYSES_FILE):
-    with open(ANALYSES_FILE, "w") as f:
-        f.write("{}")
-if not os.path.exists(STATUSES_FILE):
-    with open(STATUSES_FILE, "w") as f:
-        f.write("{}")
-if not os.path.exists(COMMENTS_FILE):
-    with open(COMMENTS_FILE, "w") as f:
-        f.write("{}")
+for _path, _default in [
+    (MD_FILE, None),
+    (ANALYSES_FILE, "{}"),
+    (STATUSES_FILE, "{}"),
+    (COMMENTS_FILE, "{}"),
+    (CUSTOM_STATUSES_FILE, "{}"),
+]:
+    if not os.path.exists(_path):
+        with open(_path, "w") as _f:
+            if _default is not None:
+                _f.write(_default)
 
 INTERVAL = 2 * 60 * 60  # 2 hours
 
-VALID_STATUSES = {"new", "applied", "rejected", "not_suitable", "interview"}
+BUILTIN_STATUSES = {
+    "new":          {"label": "New",                  "color": "#00a8ff"},
+    "applied":      {"label": "Відправив заявку",     "color": "#a29bfe"},
+    "interview":    {"label": "Очікування інтерв'ю",  "color": "#ffa502"},
+    "rejected":     {"label": "Відмовили",            "color": "#ff4757"},
+    "not_suitable": {"label": "Не підходить",         "color": "#777777"},
+}
 
 
 def run_script(script):
@@ -96,6 +103,25 @@ def load_comments():
 def save_comments(data):
     with open(COMMENTS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def load_custom_statuses():
+    if os.path.exists(CUSTOM_STATUSES_FILE):
+        with open(CUSTOM_STATUSES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_custom_statuses(data):
+    with open(CUSTOM_STATUSES_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def get_all_statuses():
+    custom = load_custom_statuses()
+    result = {k: {**v, "builtin": True} for k, v in BUILTIN_STATUSES.items()}
+    result.update({k: {**v, "builtin": False} for k, v in custom.items()})
+    return result
 
 
 def parse_vacancies():
@@ -184,12 +210,49 @@ def api_vacancies():
     return jsonify(parse_vacancies())
 
 
+@app.route("/api/statuses")
+def api_get_statuses():
+    return jsonify(get_all_statuses())
+
+
+@app.route("/api/statuses", methods=["POST"])
+def api_create_status():
+    data = request.json
+    label = (data.get("label") or "").strip()
+    color = (data.get("color") or "").strip()
+    if not label or not re.match(r'^#[0-9a-fA-F]{6}$', color):
+        return jsonify({"ok": False, "error": "label and valid hex color required"}), 400
+    key = "custom_" + re.sub(r'[^a-z0-9]', '_', label.lower())[:20] + "_" + str(int(time.time()))[-6:]
+    custom = load_custom_statuses()
+    custom[key] = {"label": label, "color": color}
+    save_custom_statuses(custom)
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/statuses/<key>", methods=["DELETE"])
+def api_delete_status(key):
+    custom = load_custom_statuses()
+    if key not in custom:
+        return jsonify({"ok": False, "error": "not found"}), 404
+    del custom[key]
+    save_custom_statuses(custom)
+    statuses = load_statuses()
+    changed = False
+    for url, s in list(statuses.items()):
+        if s == key:
+            statuses[url] = "new"
+            changed = True
+    if changed:
+        save_statuses(statuses)
+    return jsonify({"ok": True})
+
+
 @app.route("/api/vacancies/status", methods=["PUT"])
 def api_set_status():
     data = request.json
     url = data.get("url", "")
     status = data.get("status", "")
-    if not url or status not in VALID_STATUSES:
+    if not url or status not in get_all_statuses():
         return jsonify({"ok": False, "error": "invalid"}), 400
     statuses = load_statuses()
     statuses[url] = status
@@ -216,7 +279,6 @@ def api_set_comment():
 @app.route("/api/vacancies", methods=["DELETE"])
 def api_delete():
     data = request.json
-    # bulk delete
     if "urls" in data:
         for url in data["urls"]:
             remove_vacancy(url)
@@ -230,7 +292,6 @@ def api_delete():
 @app.route("/api/export")
 def api_export():
     sections = parse_vacancies()
-    analyses = load_analyses()
 
     output = io.StringIO()
     writer = csv.writer(output)
