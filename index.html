@@ -81,6 +81,21 @@
   .sf-btn[data-sf="interview"].active    { background: var(--yellow); border-color: var(--yellow); color: #111; }
   .sf-btn[data-sf="rejected"].active     { background: var(--red); border-color: var(--red); }
   .sf-btn[data-sf="not_suitable"].active { background: var(--muted); border-color: var(--muted); }
+  .sf-btn-add {
+    background: transparent; border: 1px dashed var(--border);
+    color: var(--muted); font-size: 0.8rem; padding: 4px 9px;
+    border-radius: 16px; cursor: pointer; transition: all .2s; flex-shrink: 0;
+  }
+  .sf-btn-add:hover { border-color: var(--accent); color: var(--accent); }
+  .sf-btn-custom {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .sf-btn-del {
+    font-size: 0.65rem; opacity: 0; transition: opacity .15s;
+    background: none; border: none; cursor: pointer;
+    color: inherit; padding: 0; line-height: 1;
+  }
+  .sf-btn:hover .sf-btn-del { opacity: 1; }
 
   /* Sort controls */
   .toolbar {
@@ -290,6 +305,45 @@
 
   .empty { color: var(--muted); text-align: center; padding: 40px 0; font-size: .9rem; }
 
+  /* Create status modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; width: min(320px, 90vw);
+  }
+  .modal-title { font-size: .9rem; font-weight: 600; margin-bottom: 16px; }
+  .modal-field { margin-bottom: 12px; }
+  .modal-label { font-size: .68rem; color: var(--muted); margin-bottom: 4px; }
+  .modal-input {
+    width: 100%; padding: 8px 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: .8rem;
+    font-family: inherit; outline: none; transition: border-color .2s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-color-row { display: flex; gap: 8px; align-items: center; }
+  .modal-color {
+    width: 36px; height: 36px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); padding: 2px; background: var(--panel); flex-shrink: 0;
+  }
+  .modal-color-preview {
+    flex: 1; height: 36px; border-radius: 6px;
+    border: 1px solid var(--border); transition: background .1s;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .modal-btn {
+    font-size: .75rem; padding: 6px 14px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); cursor: pointer; transition: all .2s; font-family: inherit;
+  }
+  .modal-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .modal-btn:hover:not(.modal-btn-primary) { border-color: var(--accent); }
+
   @media (min-width: 600px) {
     html { zoom: 1.3; }
     body { padding: 20px 20px 60px; max-width: 900px; }
@@ -332,13 +386,7 @@
   <span class="bulk-count" id="bulkCount">0 обрано</span>
   <div class="bulk-status-wrap">
     <button class="bulk-btn" onclick="toggleBulkStatusDropdown()">Змінити статус ▲</button>
-    <div class="bulk-status-dropdown" id="bulkStatusDropdown">
-      <button class="bsd-btn" onclick="bulkSetStatus('new')">New</button>
-      <button class="bsd-btn" onclick="bulkSetStatus('applied')">Відправив заявку</button>
-      <button class="bsd-btn" onclick="bulkSetStatus('interview')">Очікування інтерв'ю</button>
-      <button class="bsd-btn" onclick="bulkSetStatus('rejected')">Відмовили</button>
-      <button class="bsd-btn" onclick="bulkSetStatus('not_suitable')">Не підходить</button>
-    </div>
+    <div class="bulk-status-dropdown" id="bulkStatusDropdown"></div>
   </div>
   <button class="bulk-btn bulk-btn-del" onclick="bulkDelete()">Видалити</button>
   <button class="bulk-clear" onclick="clearSelection()" title="Скасувати">✕</button>
@@ -348,6 +396,28 @@
   <span class="dot dot-ok"></span> Підключено
 </div>
 
+<!-- Create status modal -->
+<div class="modal-overlay" id="createStatusModal" onclick="closeCreateModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Новий статус</div>
+    <div class="modal-field">
+      <div class="modal-label">Назва</div>
+      <input class="modal-input" id="newStatusLabel" type="text" placeholder="Наприклад: Тестове завдання" onkeydown="if(event.key==='Enter')createStatus()">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Колір</div>
+      <div class="modal-color-row">
+        <input class="modal-color" id="newStatusColor" type="color" value="#fd79a8" oninput="updateColorPreview(this.value)">
+        <div class="modal-color-preview" id="colorPreview" style="background:#fd79a8"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeCreateModal()">Скасувати</button>
+      <button class="modal-btn modal-btn-primary" onclick="createStatus()">Створити</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const appEl = document.getElementById('app');
 const filtersEl = document.getElementById('filters');
@@ -355,21 +425,56 @@ const statusFiltersEl = document.getElementById('statusFilters');
 const REFRESH = 30000;
 const SKIP = ['Пошукові запити для самостійного моніторингу'];
 
-const STATUS_LABELS = {
-  new: 'New',
-  applied: 'Відправив заявку',
-  interview: 'Очікування інтерв\'ю',
-  rejected: 'Відмовили',
-  not_suitable: 'Не підходить',
-};
-
 let allData = [];
+let allStatuses = {};
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
 let activeSort = 'default';
 let searchQuery = '';
 let openCards = new Set();
 let selectedUrls = new Set();
+
+function hexToRgb(hex) {
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  return m ? `${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)}` : null;
+}
+
+function needsDark(hex) {
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!m) return false;
+  const [r,g,b] = [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)];
+  return (r*299 + g*587 + b*114) / 1000 > 128;
+}
+
+function injectStatusStyles() {
+  let css = '';
+  for (const [key, s] of Object.entries(allStatuses)) {
+    if (s.builtin) continue;
+    const rgb = hexToRgb(s.color);
+    if (!rgb) continue;
+    css += `.vstatus-${key}{background:rgba(${rgb},.15);color:${s.color}}\n`;
+    css += `.ss-btn.active-${key}{background:rgba(${rgb},.2);color:${s.color};border-color:${s.color}}\n`;
+    css += `.sf-btn[data-sf="${key}"].active{background:${s.color};border-color:${s.color};color:${needsDark(s.color)?'#111':'#fff'}}\n`;
+  }
+  let el = document.getElementById('dynamicStyles');
+  if (!el) { el = document.createElement('style'); el.id = 'dynamicStyles'; document.head.appendChild(el); }
+  el.textContent = css;
+}
+
+async function loadStatuses() {
+  try {
+    const r = await fetch('/api/statuses');
+    allStatuses = await r.json();
+    injectStatusStyles();
+  } catch(e) { console.error(e); }
+}
+
+function renderBulkStatusDropdown() {
+  document.getElementById('bulkStatusDropdown').innerHTML =
+    Object.entries(allStatuses).map(([key, s]) =>
+      `<button class="bsd-btn" onclick="bulkSetStatus('${key}')">${s.label}</button>`
+    ).join('');
+}
 
 function getSeenUrls() {
   try { return new Set(JSON.parse(localStorage.getItem('seenUrls') || '[]')); }
@@ -384,8 +489,10 @@ function isNewSeen(url) { return !getSeenUrls().has(url); }
 
 async function load() {
   try {
+    await loadStatuses();
     const r = await fetch('/api/vacancies');
     allData = await r.json();
+    renderBulkStatusDropdown();
     renderFilters();
     renderStatusFilters();
     render();
@@ -415,25 +522,34 @@ function renderFilters() {
 }
 
 function renderStatusFilters() {
-  const counts = {all:0, new:0, applied:0, interview:0, rejected:0, not_suitable:0};
+  const counts = {all: 0};
+  for (const key of Object.keys(allStatuses)) counts[key] = 0;
   for (const s of allData) {
     if (SKIP.includes(s.name)) continue;
     for (const v of s.items) {
       counts.all++;
       const vs = v.vacancy_status || 'new';
       if (counts[vs] !== undefined) counts[vs]++;
+      else counts[vs] = 1;
     }
   }
-  statusFiltersEl.innerHTML = Object.entries({
-    all: `Всі ${counts.all}`,
-    new: `New ${counts.new}`,
-    applied: `Відправив заявку ${counts.applied}`,
-    interview: `Очікування інтерв'ю ${counts.interview}`,
-    rejected: `Відмовили ${counts.rejected}`,
-    not_suitable: `Не підходить ${counts.not_suitable}`,
-  }).map(([key, label]) =>
-    `<button class="sf-btn ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">${label}</button>`
-  ).join('');
+
+  let html = `<button class="sf-btn ${activeStatusFilter==='all'?'active':''}" data-sf="all" onclick="setStatusFilter('all')">Всі ${counts.all}</button>`;
+
+  for (const [key, s] of Object.entries(allStatuses)) {
+    const count = counts[key] || 0;
+    if (s.builtin) {
+      html += `<button class="sf-btn ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">${s.label} ${count}</button>`;
+    } else {
+      html += `<button class="sf-btn sf-btn-custom ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">
+        ${esc(s.label)} ${count}
+        <span class="sf-btn-del" onclick="event.stopPropagation();deleteStatus('${key}')" title="Видалити статус">✕</span>
+      </button>`;
+    }
+  }
+
+  html += `<button class="sf-btn-add" onclick="openCreateModal()" title="Створити статус">+</button>`;
+  statusFiltersEl.innerHTML = html;
 }
 
 function setFilter(f) { activeFilter = f; renderFilters(); render(); }
@@ -491,7 +607,8 @@ function scoreClass(s) {
 }
 
 function vstatusTag(vs) {
-  const label = STATUS_LABELS[vs] || vs;
+  const s = allStatuses[vs];
+  const label = s ? s.label : vs;
   return `<span class="vstatus vstatus-${vs}">${label}</span>`;
 }
 
@@ -514,8 +631,8 @@ function render() {
       const sc = v.score !== null && v.score !== undefined ? v.score + '/10' : '?';
       const isOpen = openCards.has(v.url);
       const vs = v.vacancy_status || 'new';
-
       const isSelected = selectedUrls.has(v.url);
+
       html += `
       <div class="card ${isOpen?'open':''} ${isSelected?'selected':''}" data-url="${escA(v.url)}" data-vstatus="${vs}">
         <div class="card-header" onclick="toggle(this)">
@@ -540,8 +657,8 @@ function render() {
           <div class="panel-inner">
             <div class="panel-label">Статус</div>
             <div class="status-selector">
-              ${Object.entries(STATUS_LABELS).map(([key, label]) =>
-                `<button class="ss-btn ${vs===key?'active-'+key:''}" onclick="setVacancyStatus(this,'${key}')">${label}</button>`
+              ${Object.entries(allStatuses).map(([key, s]) =>
+                `<button class="ss-btn ${vs===key?'active-'+key:''}" onclick="setVacancyStatus(this,'${key}')">${esc(s.label)}</button>`
               ).join('')}
             </div>
             <div class="panel-label" style="margin-top:12px">Коментар</div>
@@ -592,13 +709,11 @@ async function setVacancyStatus(btn, newStatus) {
     });
     if (r.ok) {
       card.dataset.vstatus = newStatus;
-      // update status badge
       const badge = card.querySelector('.vstatus');
       if (badge) {
         badge.className = `vstatus vstatus-${newStatus}`;
-        badge.textContent = STATUS_LABELS[newStatus] || newStatus;
+        badge.textContent = allStatuses[newStatus]?.label || newStatus;
       }
-      // update buttons
       card.querySelectorAll('.ss-btn').forEach(b => b.className = 'ss-btn');
       btn.className = `ss-btn active-${newStatus}`;
       renderStatusFilters();
@@ -712,6 +827,63 @@ function status(s) {
     ? '<span class="dot dot-ok"></span> Підключено'
     : '<span class="dot dot-err"></span> Немає зв\'язку';
 }
+
+// Modal
+function openCreateModal() {
+  document.getElementById('newStatusLabel').value = '';
+  const color = document.getElementById('newStatusColor').value;
+  document.getElementById('colorPreview').style.background = color;
+  document.getElementById('createStatusModal').classList.add('open');
+  setTimeout(() => document.getElementById('newStatusLabel').focus(), 50);
+}
+
+function closeCreateModal(e) {
+  if (!e || e.target === document.getElementById('createStatusModal')) {
+    document.getElementById('createStatusModal').classList.remove('open');
+  }
+}
+
+function updateColorPreview(color) {
+  document.getElementById('colorPreview').style.background = color;
+}
+
+async function createStatus() {
+  const label = document.getElementById('newStatusLabel').value.trim();
+  const color = document.getElementById('newStatusColor').value;
+  if (!label) {
+    document.getElementById('newStatusLabel').focus();
+    return;
+  }
+  try {
+    const r = await fetch('/api/statuses', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({label, color})
+    });
+    if (r.ok) {
+      closeCreateModal();
+      await loadStatuses();
+      renderBulkStatusDropdown();
+      renderStatusFilters();
+      render();
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function deleteStatus(key) {
+  if (!confirm(`Видалити статус? Всі вакансії з цим статусом отримають статус "New".`)) return;
+  try {
+    const r = await fetch(`/api/statuses/${key}`, {method: 'DELETE'});
+    if (r.ok) {
+      if (activeStatusFilter === key) activeStatusFilter = 'all';
+      await load();
+    }
+  } catch(e) { console.error(e); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCreateModal();
+});
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escA(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
