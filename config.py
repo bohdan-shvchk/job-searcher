@@ -28,7 +28,6 @@ PROFILE = {
 TARGET = [
     "Webflow Developer, remote full-time",
     "Shopify Developer, remote full-time",
-    "Frontend Developer (HTML/CSS/JS), remote",
     "No-code / Low-code Developer",
     "AI Automation Specialist (n8n, Make, Zapier)",
     "Web Developer with SEO experience",
@@ -48,13 +47,16 @@ NOT_INTERESTED = [
 # ============================================================
 
 FIT_CRITERIA = """
-| Signal | Good fit | Poor fit |
+| Signal | Good fit (high score) | Poor fit (score 1-2) |
 |---|---|---|
-| Role type | Webflow, Shopify, Frontend, No-code, AI Automation | Backend-only, DevOps, Mobile |
-| Company type | Product company, digital agency, startup | Russian market, gambling, adult |
-| Remote | Fully remote | Office-required |
+| Role type | Webflow, Shopify, No-code, AI Automation (n8n/Make/Zapier), Web Developer | Frontend Developer requiring React/Angular/Vue, Backend, DevOps, Mobile |
+| Tech stack | Webflow, Shopify/Liquid, HTML/CSS/JS, n8n, Make, Zapier, Figma | Python, Java, Angular, React, Vue, Node.js, Ruby, PHP, .NET, C#, Go, Kotlin |
+| Company type | Product company, digital agency, startup | Russian market, gambling, adult content |
+| Remote | Fully remote | Office-required or hybrid |
 | Salary | $2000-3200+/month | Below $2000 |
 | Language | Ukrainian or English vacancy | Russian-language vacancy |
+
+IMPORTANT: If the vacancy primarily requires React, Angular, Vue, Python, Java, Ruby, PHP, TypeScript, WordPress or any other technology not listed under "Good fit", score it 1 or 2 regardless of the job title.
 """
 
 # ============================================================
@@ -80,7 +82,6 @@ KEY_EXPERIENCE = [
 SEARCH_KEYWORDS = [
     "webflow developer",
     "shopify developer",
-    "frontend developer",
     "no-code developer",
     "web developer",
     "automation specialist",
@@ -96,17 +97,36 @@ TITLE_KEYWORDS = [
 
 # Keywords that immediately exclude a vacancy if found in the title
 EXCLUDE_TITLE_KEYWORDS = [
+    # Прямо backend
     "backend", "back-end", "back end",
-    "python developer", "python dev",
-    "java ", "java,", "java/", ".net", "c#",
+    # Frontend frameworks — нам не потрібні
+    "frontend developer", "front-end developer", "front end developer",
+    "react developer", "react dev", "react.js",
+    "angular developer", "angular dev", "angularjs",
+    "vue developer", "vue dev", "vue.js",
+    "next.js developer", "nuxt developer",
+    "фронтенд розробник", "фронтенд-розробник",
+    # Мови / стеки — нам не потрібні
+    "python developer", "python dev", "python/",
+    "java ", "java,", "java/", "java developer",
+    "ruby ", "ruby developer", "rails",
+    ".net", "c#", "asp.net",
+    "php developer", "laravel developer", "symfony",
+    "typescript developer", "ts developer",
+    "wordpress developer", "wordpress dev",
+    "golang", "go developer",
+    "kotlin developer", "swift developer",
+    "c++ ", "c/c++",
+    # Інфра / DevOps
     "devops", "sre ", "site reliability",
+    # QA
     "qa ", "qа ", "quality assurance", "тестувальник", "автоматизоване тестування",
+    # Mobile
     "android", "ios ", "mobile developer", "mobile dev",
     "flutter", "react native",
+    # Інше
     "unity", "game dev", "gamedev",
     "embedded", "hardware",
-    "c++ ", "c/c++",
-    "ruby ", "rails",
     "data engineer", "data scientist", "machine learning", "ml engineer",
     "blockchain", "solidity", "web3",
     "magento", "drupal",
@@ -120,7 +140,7 @@ EXCLUDE_TITLE_KEYWORDS = [
 SOURCES = {
     "Djinni": {
         "enabled": True,
-        "rss_keywords": ["webflow", "shopify", "frontend developer", "no-code", "n8n"],
+        "rss_keywords": ["webflow", "shopify", "no-code", "n8n"],
         "link_pattern": r'/jobs/(\d+)-',
     },
     "DOU": {
@@ -128,7 +148,6 @@ SOURCES = {
         "urls": [
             "https://jobs.dou.ua/vacancies/?search=Webflow+Developer",
             "https://jobs.dou.ua/vacancies/?search=Shopify+Developer",
-            "https://jobs.dou.ua/vacancies/?search=Frontend+Developer",
             "https://jobs.dou.ua/vacancies/?search=No-code+Developer",
         ],
         "link_pattern": r'/companies/[^/]+/vacancies/\d+/',
@@ -138,7 +157,6 @@ SOURCES = {
         "urls": [
             "https://www.work.ua/en/jobs-webflow+developer/",
             "https://www.work.ua/en/jobs-shopify+developer/",
-            "https://www.work.ua/en/jobs-frontend+developer/",
             "https://www.work.ua/en/jobs-no-code+developer/",
         ],
         "link_pattern": r'/en/jobs/\d+/',
@@ -148,7 +166,6 @@ SOURCES = {
         "urls": [
             "https://robota.ua/ua/jobs/webflow",
             "https://robota.ua/ua/jobs/shopify",
-            "https://robota.ua/ua/jobs/frontend",
             "https://robota.ua/ua/jobs/no-code",
         ],
     },
@@ -157,7 +174,6 @@ SOURCES = {
         "urls": [
             "https://hh.ua/search/vacancy?text=webflow+developer&area=5",
             "https://hh.ua/search/vacancy?text=shopify+developer&area=5",
-            "https://hh.ua/search/vacancy?text=frontend+developer&area=5",
             "https://hh.ua/search/vacancy?text=no-code+developer&area=5",
         ],
     },

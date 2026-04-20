@@ -81,6 +81,10 @@
   .sf-btn[data-sf="interview"].active    { background: var(--yellow); border-color: var(--yellow); color: #111; }
   .sf-btn[data-sf="rejected"].active     { background: var(--red); border-color: var(--red); }
   .sf-btn[data-sf="not_suitable"].active { background: var(--muted); border-color: var(--muted); }
+  .sf-btn[draggable="true"] { cursor: grab; }
+  .sf-btn[draggable="true"]:active { cursor: grabbing; }
+  .sf-btn.drag-over { border-color: var(--accent); transform: scale(1.04); }
+
   .sf-btn-add {
     background: transparent; border: 1px dashed var(--border);
     color: var(--muted); font-size: 0.8rem; padding: 4px 9px;
@@ -427,12 +431,13 @@ const SKIP = ['Пошукові запити для самостійного м�
 
 let allData = [];
 let allStatuses = {};
-let activeFilter = 'all';
-let activeStatusFilter = 'all';
+let activeFilter = 'new';
+let activeStatusFilter = 'new';
 let activeSort = 'default';
 let searchQuery = '';
 let openCards = new Set();
 let selectedUrls = new Set();
+let dragSrcKey = null;
 
 function hexToRgb(hex) {
   const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
@@ -469,9 +474,60 @@ async function loadStatuses() {
   } catch(e) { console.error(e); }
 }
 
+function getStatusOrder() {
+  try { return JSON.parse(localStorage.getItem('statusOrder') || 'null'); }
+  catch { return null; }
+}
+function saveStatusOrder(keys) {
+  localStorage.setItem('statusOrder', JSON.stringify(keys));
+}
+function getSortedStatuses() {
+  const order = getStatusOrder();
+  const entries = Object.entries(allStatuses);
+  if (!order) return entries;
+  return [...entries].sort((a, b) => {
+    const ai = order.indexOf(a[0]), bi = order.indexOf(b[0]);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+
+function onStatusDragStart(e, key) {
+  dragSrcKey = key;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.style.opacity = '0.4', 0);
+}
+function onStatusDragEnd(e) {
+  e.target.style.opacity = '';
+  document.querySelectorAll('.sf-btn.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+function onStatusDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function onStatusDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onStatusDrop(e, key) {
+  e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragSrcKey || dragSrcKey === key) return;
+  const keys = getSortedStatuses().map(([k]) => k);
+  const srcIdx = keys.indexOf(dragSrcKey), dstIdx = keys.indexOf(key);
+  if (srcIdx === -1 || dstIdx === -1) return;
+  keys.splice(srcIdx, 1);
+  keys.splice(dstIdx, 0, dragSrcKey);
+  saveStatusOrder(keys);
+  renderStatusFilters();
+  renderBulkStatusDropdown();
+}
+
 function renderBulkStatusDropdown() {
   document.getElementById('bulkStatusDropdown').innerHTML =
-    Object.entries(allStatuses).map(([key, s]) =>
+    getSortedStatuses().map(([key, s]) =>
       `<button class="bsd-btn" onclick="bulkSetStatus('${key}')">${s.label}</button>`
     ).join('');
 }
@@ -534,14 +590,21 @@ function renderStatusFilters() {
     }
   }
 
+  const dragAttrs = (key) => `draggable="true"
+    ondragstart="onStatusDragStart(event,'${key}')"
+    ondragend="onStatusDragEnd(event)"
+    ondragover="onStatusDragOver(event)"
+    ondragleave="onStatusDragLeave(event)"
+    ondrop="onStatusDrop(event,'${key}')"`;
+
   let html = `<button class="sf-btn ${activeStatusFilter==='all'?'active':''}" data-sf="all" onclick="setStatusFilter('all')">Всі ${counts.all}</button>`;
 
-  for (const [key, s] of Object.entries(allStatuses)) {
+  for (const [key, s] of getSortedStatuses()) {
     const count = counts[key] || 0;
     if (s.builtin) {
-      html += `<button class="sf-btn ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">${s.label} ${count}</button>`;
+      html += `<button class="sf-btn ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')" ${dragAttrs(key)}>${s.label} ${count}</button>`;
     } else {
-      html += `<button class="sf-btn sf-btn-custom ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')">
+      html += `<button class="sf-btn sf-btn-custom ${activeStatusFilter===key?'active':''}" data-sf="${key}" onclick="setStatusFilter('${key}')" ${dragAttrs(key)}>
         ${esc(s.label)} ${count}
         <span class="sf-btn-del" onclick="event.stopPropagation();deleteStatus('${key}')" title="Видалити статус">✕</span>
       </button>`;
@@ -657,7 +720,7 @@ function render() {
           <div class="panel-inner">
             <div class="panel-label">Статус</div>
             <div class="status-selector">
-              ${Object.entries(allStatuses).map(([key, s]) =>
+              ${getSortedStatuses().map(([key, s]) =>
                 `<button class="ss-btn ${vs===key?'active-'+key:''}" onclick="setVacancyStatus(this,'${key}')">${esc(s.label)}</button>`
               ).join('')}
             </div>

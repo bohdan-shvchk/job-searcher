@@ -58,11 +58,19 @@ def fetch_html(url, extra_headers=None):
 
 
 def get_existing_urls():
-    if not os.path.exists(MD_FILE):
-        return set()
-    with open(MD_FILE, "r", encoding="utf-8") as f:
-        content = f.read()
-    return set(re.findall(r'\((https?://[^)]+)\)', content))
+    urls = set()
+    if os.path.exists(MD_FILE):
+        with open(MD_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        urls.update(re.findall(r'\((https?://[^)]+)\)', content))
+    if os.path.exists(ANALYSES_FILE):
+        with open(ANALYSES_FILE, "r", encoding="utf-8") as f:
+            urls.update(json.load(f).keys())
+    statuses_path = os.path.join(DATA_DIR, "statuses.json")
+    if os.path.exists(statuses_path):
+        with open(statuses_path, "r", encoding="utf-8") as f:
+            urls.update(json.load(f).keys())
+    return urls
 
 
 def is_relevant(title):

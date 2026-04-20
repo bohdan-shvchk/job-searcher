@@ -183,10 +183,8 @@ def remove_vacancy(url):
         if url in analyses:
             del analyses[url]
             save_analyses(analyses)
-        statuses = load_statuses()
-        if url in statuses:
-            del statuses[url]
-            save_statuses(statuses)
+        # Статус навмисно не видаляємо — check_new.py перевіряє statuses.json
+        # щоб не додавати видалені вакансії знову
         comments = load_comments()
         if url in comments:
             del comments[url]
