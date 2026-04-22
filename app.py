@@ -25,6 +25,8 @@ ANALYSES_FILE = os.path.join(DATA_DIR, "analyses.json")
 STATUSES_FILE = os.path.join(DATA_DIR, "statuses.json")
 COMMENTS_FILE = os.path.join(DATA_DIR, "comments.json")
 CUSTOM_STATUSES_FILE = os.path.join(DATA_DIR, "custom_statuses.json")
+CHANGELOG_FILE = os.path.join(BASE_DIR, "changelog.md")
+LOG_FILE = os.path.join(DATA_DIR, "check.log")
 
 for _path, _default in [
     (MD_FILE, None),
@@ -198,9 +200,38 @@ def index():
     return send_file("index.html")
 
 
+@app.route("/changelog")
+def changelog_page():
+    return send_file("changelog.html")
+
+
 @app.route("/api/config")
 def api_config():
     return jsonify({"title": PAGE_TITLE})
+
+
+@app.route("/api/last-check")
+def api_last_check():
+    if not os.path.exists(LOG_FILE):
+        return jsonify({"last_check": None})
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        for line in reversed(lines):
+            m = re.match(r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]", line)
+            if m:
+                return jsonify({"last_check": m.group(1)})
+    except Exception:
+        pass
+    return jsonify({"last_check": None})
+
+
+@app.route("/api/changelog")
+def api_changelog():
+    if os.path.exists(CHANGELOG_FILE):
+        with open(CHANGELOG_FILE, "r", encoding="utf-8") as f:
+            return jsonify({"content": f.read()})
+    return jsonify({"content": ""})
 
 
 @app.route("/api/vacancies")
